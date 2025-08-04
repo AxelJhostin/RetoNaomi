@@ -1,0 +1,32 @@
+# .devcontainer/docker-compose.yml
+version: '3.8'
+
+services:
+  # Servicio para la aplicación Next.js
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspaces/retonaomi:cached
+    ports:
+      - 3000:3000
+    command: sleep infinity
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/tapandorder_db
+
+  # Servicio para la base de datos PostgreSQL
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=tapandorder_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+
+volumes:
+  postgres_data:
