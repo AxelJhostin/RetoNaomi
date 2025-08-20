@@ -1,11 +1,27 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // <-- Asegúrate de que diga "postgresql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// MODELO PARA LOS USUARIOS (DUEÑOS DE RESTAURANTES)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// MODELO PARA LOS ROLES DEL PERSONAL
+model Role {
+  id        String   @id @default(cuid())
+  name      String   @unique // Ej: "Mesero", "Cocinero", "Admin"
+  createdAt DateTime @default(now())
 }
