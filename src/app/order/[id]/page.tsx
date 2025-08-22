@@ -16,6 +16,21 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const orderId = params.id as string;
 
+  const handleSendToKitchen = async () => {
+        try {
+            await fetch(`/api/orders/${orderId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'COOKING' }), // Cambiamos el estado
+            });
+            // Una vez enviado, redirigimos al mesero de vuelta a la vista de mesas
+            router.push('/waiter');
+        } catch (error) {
+            console.error('Error al enviar a cocina:', error);
+            alert('No se pudo enviar el pedido a cocina.');
+        }
+  };
+
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId) return;
     try {
@@ -106,9 +121,12 @@ export default function OrderDetailPage() {
             <span>Total</span>
             <span>${order.total.toFixed(2)}</span>
           </div>
-          <button className="w-full bg-green-500 text-white p-4 rounded-lg mt-4 font-bold text-lg">
+          <button 
+            onClick={handleSendToKitchen}
+            className="w-full bg-green-500 text-white p-4 rounded-lg mt-4 font-bold text-lg hover:bg-green-600"
+            >
             Enviar a Cocina
-          </button>
+            </button>
         </div>
       </section>
     </main>
