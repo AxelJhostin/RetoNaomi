@@ -46,6 +46,28 @@ export default function TableManager() {
     }
   };
 
+  const handleDeleteTable = async (tableId: string) => {
+  if (!confirm('¿Estás seguro de que quieres eliminar esta mesa?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/tables/${tableId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al eliminar la mesa');
+    }
+
+    // Actualizamos la UI al instante
+    fetchTables();
+
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
   return (
     <section className="flex flex-col gap-8">
       <h1 className="text-3xl font-bold text-gray-900">Gestión de Mesas</h1>
@@ -72,11 +94,18 @@ export default function TableManager() {
         ) : tables.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {tables.map((table) => (
-              <div key={table.id} className="rounded-lg border bg-green-100 p-4 text-center">
-                <p className="font-bold">{table.name}</p>
-                <p className="text-sm text-green-800">{table.status}</p>
-              </div>
-            ))}
+                <div key={table.id} className="relative rounded-lg border bg-green-100 p-4 text-center">
+                    <p className="font-bold">{table.name}</p>
+                    <p className="text-sm text-green-800">{table.status}</p>
+                    <button
+                    onClick={() => handleDeleteTable(table.id)}
+                    className="absolute top-1 right-1 h-6 w-6 rounded-full bg-red-500 text-white text-xs hover:bg-red-700"
+                    title="Eliminar mesa"
+                    >
+                    X
+                    </button>
+                </div>
+))}
           </div>
         ) : (
           <p>No has añadido mesas.</p>
