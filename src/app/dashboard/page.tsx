@@ -207,19 +207,97 @@ const handleUpdateSubmit = async (event: FormEvent) => {
 
   return (
     <main className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Columna de Gestión de Productos */}
-        <section>
-          <h1 className="mb-6 text-3xl font-bold text-gray-900">Gestión de Productos</h1>
-          {/* ... (Todo el JSX de productos va aquí, sin cambios) ... */}
-        </section>
+      {/* Rejilla principal que divide la página en dos columnas en pantallas grandes */}
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 lg:grid-cols-2">
         
-        {/* --- ¡NUEVA COLUMNA DE GESTIÓN DE PERSONAL! --- */}
-        <section>
-          <h1 className="mb-6 text-3xl font-bold text-gray-900">Gestión de Personal</h1>
+        {/* === COLUMNA IZQUIERDA: GESTIÓN DE PRODUCTOS === */}
+        <section className="flex flex-col gap-8">
+          <h1 className="text-3xl font-bold text-gray-900">Gestión de Productos</h1>
+          
+          {/* Formulario para añadir nuevo producto */}
+          <div className="rounded-lg bg-white p-6 shadow-md">
+            <h2 className="mb-4 text-xl font-semibold">Añadir Nuevo Producto</h2>
+            <form onSubmit={handleAddProduct}>
+              <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <input
+                  type="text"
+                  placeholder="Nombre del producto"
+                  value={newProductName}
+                  onChange={(e) => setNewProductName(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 p-2"
+                  required
+                />
+                <input
+                  type="number"
+                  placeholder="Precio (ej: 8.50)"
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 p-2"
+                  step="0.01"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Categoría (ej: Bebidas, Postres)"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 p-2"
+                />
+              </div>
+              <div className="mb-4">
+                <textarea
+                  placeholder="Descripción del producto"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 p-2"
+                  rows={3}
+                ></textarea>
+              </div>
+              <button type="submit" className="w-full rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700">
+                Añadir Producto
+              </button>
+            </form>
+          </div>
 
+          {/* Lista de productos existentes */}
+          <div className="rounded-lg bg-white p-6 shadow-md">
+            <h2 className="mb-4 text-xl font-semibold">Mi Menú</h2>
+            {isLoadingProducts ? (
+              <p>Cargando productos...</p>
+            ) : products.length > 0 ? (
+              <ul>
+                {products.map((product) => (
+                  <li key={product.id} className="flex flex-col items-start justify-between border-b py-4 last:border-none sm:flex-row sm:items-center">
+                    <div className="mb-2 sm:mb-0">
+                      <p className="font-semibold text-gray-800">{product.name}</p>
+                      <p className="text-sm text-gray-500">{product.description}</p>
+                    </div>
+                    <div className="flex w-full items-center justify-between sm:w-auto sm:justify-end shrink-0">
+                      <p className="font-mono text-lg font-semibold text-blue-600">${product.price.toFixed(2)}</p>
+                      <button onClick={() => handleEditClick(product)} className="ml-4 rounded-md bg-yellow-500 px-3 py-1 text-sm text-white hover:bg-yellow-600">
+                        Editar
+                      </button>
+                      <button onClick={() => handleDelete(product.id)} className="ml-2 rounded-md bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600">
+                        Eliminar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-center text-gray-500">No hay productos para mostrar.</p>
+            )}
+          </div>
+        </section>
+
+        {/* === COLUMNA DERECHA: GESTIÓN DE PERSONAL === */}
+        <section className="flex flex-col gap-8">
+          <h1 className="text-3xl font-bold text-gray-900">Gestión de Personal</h1>
+          
           {/* Formulario para añadir nuevo personal */}
-          <div className="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <div className="rounded-lg bg-white p-6 shadow-md">
             <h2 className="mb-4 text-xl font-semibold">Añadir Empleado</h2>
             <form onSubmit={handleAddStaff}>
               <div className="mb-4">
@@ -228,6 +306,7 @@ const handleUpdateSubmit = async (event: FormEvent) => {
               <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <input type="text" placeholder="PIN de 4 dígitos" value={newStaffPin} onChange={(e) => setNewStaffPin(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required />
                 <select value={selectedRoleId} onChange={(e) => setSelectedRoleId(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required>
+                  <option value="" disabled>Selecciona un rol</option>
                   {roles.map(role => (
                     <option key={role.id} value={role.id}>{role.name}</option>
                   ))}
@@ -253,108 +332,30 @@ const handleUpdateSubmit = async (event: FormEvent) => {
             ) : ( <p className="text-center text-gray-500">No has añadido personal.</p> )}
           </div>
         </section>
-        <h1 className="mb-6 text-3xl font-bold text-gray-900">Gestión de Productos</h1>
 
-        {/* Formulario para añadir nuevo producto */}
-        <div className="mb-8 rounded-lg bg-white p-6 shadow-md">
-          <h2 className="mb-4 text-xl font-semibold">Añadir Nuevo Producto</h2>
-          <form onSubmit={handleAddProduct}>
-            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <input
-                type="text"
-                placeholder="Nombre del producto"
-                value={newProductName}
-                onChange={(e) => setNewProductName(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2"
-                required
-              />
-              <input
-                type="number"
-                placeholder="Precio (ej: 8.50)"
-                value={newPrice}
-                onChange={(e) => setNewPrice(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2"
-                step="0.01"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Categoría (ej: Bebidas, Postres)"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2"
-              />
-            </div>
-            <div className="mb-4">
-              <textarea
-                placeholder="Descripción del producto"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2"
-                rows={3}
-              ></textarea>
-            </div>
-            <button type="submit" className="w-full rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700">
-              Añadir Producto
-            </button>
-          </form>
-        </div>
-
-        {/* Lista de productos existentes */}
-        <div className="rounded-lg bg-white p-6 shadow-md">
-          <h2 className="mb-4 text-xl font-semibold">Mi Menú</h2>
-          {isLoadingProducts ? (
-            <p>Cargando productos...</p>
-          ) : products.length > 0 ? (
-            <ul>
-              {products.map((product) => (
-                <li key={product.id} className="flex flex-col items-start justify-between border-b py-4 last:border-none sm:flex-row sm:items-center">
-                  <div className="mb-2 sm:mb-0">
-                    <p className="font-semibold text-gray-800">{product.name}</p>
-                    <p className="text-sm text-gray-500">{product.description}</p>
-                  </div>
-                  <div className="flex w-full items-center justify-between sm:w-auto sm:justify-end">
-                    <p className="font-mono text-lg font-semibold text-blue-600">${product.price.toFixed(2)}</p>
-                    {/* --- ¡NUEVO BOTÓN DE EDITAR! --- */}
-                    <button onClick={() => handleEditClick(product)} className="ml-4 rounded-md bg-yellow-500 px-3 py-1 text-sm text-white hover:bg-yellow-600">
-                      Editar
-                    </button>
-                    <button onClick={() => handleDelete(product.id)} className="ml-2 rounded-md bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600">
-                      Eliminar
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-center text-gray-500">No hay productos para mostrar.</p>
-          )}
-        </div>
       </div>
 
+      {/* --- Modal de Edición de Producto --- */}
       {editingProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-md rounded-lg bg-white p-6">
             <h2 className="mb-4 text-xl font-semibold">Editar Producto</h2>
             <form onSubmit={handleUpdateSubmit}>
-              {/* ... (Campos del formulario de edición, similar al de añadir) ... */}
               <div className="mb-4">
-                <label>Nombre</label>
-                <input type="text" value={editedName} onChange={(e) => setEditedName(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required />
+                <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                <input type="text" value={editedName} onChange={(e) => setEditedName(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 p-2" required />
               </div>
               <div className="mb-4">
-                <label>Precio</label>
-                <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" step="0.01" required />
+                <label className="block text-sm font-medium text-gray-700">Precio</label>
+                <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 p-2" step="0.01" required />
               </div>
               <div className="mb-4">
-                <label>Descripción</label>
-                <textarea value={editedDescription} onChange={(e) => setEditedDescription(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" rows={3}></textarea>
+                <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                <textarea value={editedDescription} onChange={(e) => setEditedDescription(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 p-2" rows={3}></textarea>
               </div>
                <div className="mb-4">
-                <label>Categoría</label>
-                <input type="text" value={editedCategory} onChange={(e) => setEditedCategory(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" />
+                <label className="block text-sm font-medium text-gray-700">Categoría</label>
+                <input type="text" value={editedCategory} onChange={(e) => setEditedCategory(e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 p-2" />
               </div>
               <div className="flex justify-end gap-4">
                 <button type="button" onClick={() => setEditingProduct(null)} className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300">Cancelar</button>
