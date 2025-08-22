@@ -21,6 +21,7 @@ model User {
   // Relación: Un usuario puede tener muchos productos
   products  Product[]
   staff     Staff[]   @relation("StaffMembers")
+  tables    Table[]
 }
 
 // MODELO PARA LOS ROLES DEL PERSONAL
@@ -61,4 +62,22 @@ model Staff {
   // Relación: Un miembro del personal tiene un rol
   roleId    String
   role      Role     @relation(fields: [roleId], references: [id])
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  BILLING
+}
+
+model Table {
+  id        String      @id @default(cuid())
+  name      String      // ej: "Mesa 5", "Terraza 1"
+  status    TableStatus @default(AVAILABLE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relación: Una mesa pertenece a un restaurante (dueño)
+  ownerId   String
+  owner     User        @relation(fields: [ownerId], references: [id])
 }
