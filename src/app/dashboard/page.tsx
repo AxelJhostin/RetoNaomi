@@ -21,6 +21,13 @@ export default function DashboardPage() {
   const [newDescription, setNewDescription] = useState('');
   const [newCategory, setNewCategory] = useState('');
 
+  //Estados para la edición de productos
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editedName, setEditedName] = useState('');
+  const [editedPrice, setEditedPrice] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedCategory, setEditedCategory] = useState('');
+
   // Función para obtener los productos
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -67,6 +74,62 @@ export default function DashboardPage() {
 
     } catch (error) {
       console.error('Error:', error);
+    }
+  };
+
+  const handleDelete = async (productId: string) => {
+  // Pedimos confirmación antes de borrar
+  if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/products/${productId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al eliminar el producto');
+    }
+
+    // Actualizamos la lista de productos en la UI sin recargar la página
+    setProducts(products.filter((p) => p.id !== productId));
+
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+const handleEditClick = (product: Product) => {
+    setEditingProduct(product);
+    setEditedName(product.name);
+    setEditedPrice(product.price.toString());
+    setEditedDescription(product.description || '');
+    setEditedCategory(product.category || '');
+  };
+
+const handleUpdateSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!editingProduct) return;
+
+    try {
+      const response = await fetch(`/api/products/${editingProduct.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editedName,
+          price: parseFloat(editedPrice),
+          description: editedDescription,
+          category: editedCategory,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Error al actualizar el producto');
+
+      setEditingProduct(null); // Cierra el modal
+      fetchProducts(); // Recarga la lista de productos
+    } catch (error) {
+      console.error("Error:", error);
     }
   };
 
@@ -130,12 +193,21 @@ export default function DashboardPage() {
           ) : products.length > 0 ? (
             <ul>
               {products.map((product) => (
-                <li key={product.id} className="flex items-center justify-between border-b py-4 last:border-none">
-                  <div>
+                <li key={product.id} className="flex flex-col items-start justify-between border-b py-4 last:border-none sm:flex-row sm:items-center">
+                  <div className="mb-2 sm:mb-0">
                     <p className="font-semibold text-gray-800">{product.name}</p>
                     <p className="text-sm text-gray-500">{product.description}</p>
                   </div>
-                  <p className="font-mono text-lg font-semibold text-blue-600">${product.price.toFixed(2)}</p>
+                  <div className="flex w-full items-center justify-between sm:w-auto sm:justify-end">
+                    <p className="font-mono text-lg font-semibold text-blue-600">${product.price.toFixed(2)}</p>
+                    {/* --- ¡NUEVO BOTÓN DE EDITAR! --- */}
+                    <button onClick={() => handleEditClick(product)} className="ml-4 rounded-md bg-yellow-500 px-3 py-1 text-sm text-white hover:bg-yellow-600">
+                      Editar
+                    </button>
+                    <button onClick={() => handleDelete(product.id)} className="ml-2 rounded-md bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600">
+                      Eliminar
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -144,6 +216,38 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {editingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6">
+            <h2 className="mb-4 text-xl font-semibold">Editar Producto</h2>
+            <form onSubmit={handleUpdateSubmit}>
+              {/* ... (Campos del formulario de edición, similar al de añadir) ... */}
+              <div className="mb-4">
+                <label>Nombre</label>
+                <input type="text" value={editedName} onChange={(e) => setEditedName(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required />
+              </div>
+              <div className="mb-4">
+                <label>Precio</label>
+                <input type="number" value={editedPrice} onChange={(e) => setEditedPrice(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" step="0.01" required />
+              </div>
+              <div className="mb-4">
+                <label>Descripción</label>
+                <textarea value={editedDescription} onChange={(e) => setEditedDescription(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" rows={3}></textarea>
+              </div>
+               <div className="mb-4">
+                <label>Categoría</label>
+                <input type="text" value={editedCategory} onChange={(e) => setEditedCategory(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" />
+              </div>
+              <div className="flex justify-end gap-4">
+                <button type="button" onClick={() => setEditingProduct(null)} className="rounded-md bg-gray-200 px-4 py-2 hover:bg-gray-300">Cancelar</button>
+                <button type="submit" className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700">Guardar Cambios</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
