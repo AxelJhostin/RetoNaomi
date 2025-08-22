@@ -17,6 +17,9 @@ model User {
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relación: Un usuario puede tener muchos productos
+  products  Product[]
 }
 
 // MODELO PARA LOS ROLES DEL PERSONAL
@@ -24,4 +27,19 @@ model Role {
   id        String   @id @default(cuid())
   name      String   @unique // Ej: "Mesero", "Cocinero", "Admin"
   createdAt DateTime @default(now())
+}
+
+// MODELO PARA LOS PRODUCTOS DEL MENÚ
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  category    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relación: Un producto pertenece a un usuario (dueño)
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id])
 }
