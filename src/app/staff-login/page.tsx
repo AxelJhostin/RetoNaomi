@@ -33,10 +33,12 @@ export default function StaffLoginPage() {
         setError('Rol no reconocido');
       }
 
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    } catch (err) { // Quitamos el ': any'
+      if (err instanceof Error) {
+        setError(err.message); // Si es un objeto Error, usamos su mensaje
+      } else {
+        setError('Ocurrió un error inesperado'); // Si no, un mensaje genérico
+      }
     }
   };
 
