@@ -31,3 +31,28 @@ export async function GET(
     return NextResponse.json({ message: 'Error al obtener el pedido' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const orderId = params.id;
+    const body = await request.json();
+    const { status } = body;
+
+    if (!status) {
+      return NextResponse.json({ message: 'El estado es requerido' }, { status: 400 });
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { status: status },
+    });
+
+    return NextResponse.json(updatedOrder, { status: 200 });
+  } catch (error) {
+    console.error('Error al actualizar el pedido:', error);
+    return NextResponse.json({ message: 'Error al actualizar el pedido' }, { status: 500 });
+  }
+}

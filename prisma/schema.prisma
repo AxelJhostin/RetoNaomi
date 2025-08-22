@@ -1,5 +1,13 @@
 // prisma/schema.prisma
 
+enum OrderStatus {
+  OPEN
+  COOKING
+  READY
+  CLOSED
+  CANCELED
+}
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -89,7 +97,7 @@ model Table {
 
 model Order {
   id        String      @id @default(cuid())
-  status    String      @default("OPEN") // OPEN, CLOSED, CANCELED
+  status    OrderStatus @default(OPEN) // OPEN, CLOSED, CANCELED
   total     Float       @default(0)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
