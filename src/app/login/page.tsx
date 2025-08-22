@@ -2,8 +2,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   // Nuevos estados para una mejor experiencia de usuario
@@ -29,7 +31,7 @@ export default function LoginPage() {
       if (response.ok) {
         // Si la respuesta es exitosa (status 200-299)
         console.log('Login exitoso:', data);
-        alert('¡Inicio de sesión exitoso!'); // Alerta temporal
+        router.push('/dashboard');
         // Aquí, en el futuro, redirigiremos al usuario al dashboard
       } else {
         // Si hay un error (status 4xx, 5xx)
