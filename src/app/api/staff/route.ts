@@ -62,6 +62,9 @@ export async function POST(request: NextRequest) {
         ownerId: userId, // Lo asociamos con el dueño
         roleId: roleId,   // Lo asociamos con el rol
       },
+      include: {
+      role: true, // Le decimos a Prisma que incluya el objeto del rol relacionado
+    },
     });
 
     return NextResponse.json(newStaffMember, { status: 201 });

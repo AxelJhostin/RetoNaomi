@@ -172,6 +172,28 @@ export default function DashboardPage() {
   }
 };
 
+const handleDeleteStaff = async (staffId: string) => {
+  if (!confirm('¿Estás seguro de que quieres eliminar a este empleado?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/staff/${staffId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al eliminar el empleado');
+    }
+
+    // Actualizamos la lista en la UI para que el cambio se vea al instante
+    setStaff(staff.filter((s) => s.id !== staffId));
+
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
 const handleEditClick = (product: Product) => {
     setEditingProduct(product);
     setEditedName(product.name);
@@ -179,6 +201,8 @@ const handleEditClick = (product: Product) => {
     setEditedDescription(product.description || '');
     setEditedCategory(product.category || '');
   };
+
+  
 
 const handleUpdateSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -324,8 +348,21 @@ const handleUpdateSubmit = async (event: FormEvent) => {
               <ul>
                 {staff.map((member) => (
                   <li key={member.id} className="flex items-center justify-between border-b py-3 last:border-none">
-                    <p className="font-semibold text-gray-800">{member.name}</p>
-                    <p className="rounded-full bg-gray-200 px-3 py-1 text-sm text-gray-700">{member.role.name}</p>
+                    <div>
+                      <p className="font-semibold text-gray-800">{member.name}</p>
+                      <p className="rounded-full bg-gray-200 px-3 py-1 text-sm text-gray-700 inline-block mt-1">
+                        {member.role.name}
+                      </p>
+                    </div>
+                    <div>
+                      {/* Aquí podríamos añadir un botón de editar en el futuro */}
+                      <button 
+                        onClick={() => handleDeleteStaff(member.id)}
+                        className="ml-4 rounded-md bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
