@@ -20,6 +20,7 @@ model User {
 
   // Relación: Un usuario puede tener muchos productos
   products  Product[]
+  staff     Staff[]   @relation("StaffMembers")
 }
 
 // MODELO PARA LOS ROLES DEL PERSONAL
@@ -27,6 +28,7 @@ model Role {
   id        String   @id @default(cuid())
   name      String   @unique // Ej: "Mesero", "Cocinero", "Admin"
   createdAt DateTime @default(now())
+  staff     Staff[]
 }
 
 // MODELO PARA LOS PRODUCTOS DEL MENÚ
@@ -42,4 +44,21 @@ model Product {
   // Relación: Un producto pertenece a un usuario (dueño)
   ownerId     String
   owner       User      @relation(fields: [ownerId], references: [id])
+}
+
+// MODELO PARA EL PERSONAL (MESEROS, COCINEROS)
+model Staff {
+  id        String   @id @default(cuid())
+  name      String
+  pin       String   // Un PIN de 4 o 6 dígitos para un login rápido
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación: Un miembro del personal pertenece a un restaurante (dueño)
+  ownerId   String
+  owner     User     @relation("StaffMembers", fields: [ownerId], references: [id])
+
+  // Relación: Un miembro del personal tiene un rol
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
 }
