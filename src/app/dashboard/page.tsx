@@ -11,12 +11,23 @@ interface Product {
   category: string | null;
 }
 
+interface Role {
+  id: string;
+  name: string;
+}
+
+interface Staff {
+  id: string;
+  name: string;
+  role: Role;
+}
+
 export default function DashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   // Estados para el nuevo formulario de producto
-  const [newName, setNewName] = useState('');
+  const [newProductName, setNewProductName] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newCategory, setNewCategory] = useState('');
@@ -28,9 +39,46 @@ export default function DashboardPage() {
   const [editedDescription, setEditedDescription] = useState('');
   const [editedCategory, setEditedCategory] = useState('');
 
+  // --- ¡NUEVOS ESTADOS PARA PERSONAL! ---
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(true);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffPin, setNewStaffPin] = useState('');
+  const [selectedRoleId, setSelectedRoleId] = useState('');
+  // ---
+
+  // --- LÓGICA PARA OBTENER DATOS ---
+  useEffect(() => {
+    const fetchData = async () => {
+      // Obtener Productos
+      try {
+        const productsRes = await fetch('/api/products');
+        const productsData = await productsRes.json();
+        setProducts(productsData);
+      } catch (error) { console.error('Error al cargar los productos:', error); }
+      setIsLoadingProducts(false);
+
+      // Obtener Roles y Personal
+      try {
+        const rolesRes = await fetch('/api/roles');
+        const rolesData = await rolesRes.json();
+        setRoles(rolesData);
+        if (rolesData.length > 0) setSelectedRoleId(rolesData[0].id); // Selecciona el primer rol por defecto
+
+        const staffRes = await fetch('/api/staff');
+        const staffData = await staffRes.json();
+        setStaff(staffData);
+      } catch (error) { console.error('Error al cargar personal y roles:', error); }
+      setIsLoadingStaff(false);
+    };
+
+    fetchData();
+  }, []);
+
   // Función para obtener los productos
   const fetchProducts = async () => {
-    setIsLoading(true);
+    setIsLoadingProducts(true);
     try {
       const response = await fetch('/api/products');
       const data = await response.json();
@@ -38,7 +86,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error al cargar los productos:', error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingProducts(false);
     }
   };
 
@@ -54,7 +102,7 @@ export default function DashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: newName,
+          name: newProductName,
           price: parseFloat(newPrice),
           description: newDescription,
           category: newCategory,
@@ -66,7 +114,7 @@ export default function DashboardPage() {
       }
 
       // Limpiamos el formulario y recargamos la lista de productos
-      setNewName('');
+      setNewProductName('');
       setNewPrice('');
       setNewDescription('');
       setNewCategory('');
@@ -75,6 +123,30 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error:', error);
     }
+  };
+
+  const handleAddStaff = async (event: FormEvent) => {
+    event.preventDefault();
+    try {
+      const response = await fetch('/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newStaffName,
+          pin: newStaffPin,
+          roleId: selectedRoleId,
+        }),
+      });
+      if (!response.ok) throw new Error('Error al crear el empleado');
+
+      // Limpiamos el formulario y recargamos la lista
+      setNewStaffName('');
+      setNewStaffPin('');
+      // Para recargar la lista, podríamos llamar a una función fetchStaff() o simplemente añadir el nuevo miembro a la lista existente
+      const newMember = await response.json();
+      setStaff([...staff, newMember]);
+
+    } catch (error) { console.error('Error:', error); }
   };
 
   const handleDelete = async (productId: string) => {
@@ -135,7 +207,52 @@ const handleUpdateSubmit = async (event: FormEvent) => {
 
   return (
     <main className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-2">
+        {/* Columna de Gestión de Productos */}
+        <section>
+          <h1 className="mb-6 text-3xl font-bold text-gray-900">Gestión de Productos</h1>
+          {/* ... (Todo el JSX de productos va aquí, sin cambios) ... */}
+        </section>
+        
+        {/* --- ¡NUEVA COLUMNA DE GESTIÓN DE PERSONAL! --- */}
+        <section>
+          <h1 className="mb-6 text-3xl font-bold text-gray-900">Gestión de Personal</h1>
+
+          {/* Formulario para añadir nuevo personal */}
+          <div className="mb-8 rounded-lg bg-white p-6 shadow-md">
+            <h2 className="mb-4 text-xl font-semibold">Añadir Empleado</h2>
+            <form onSubmit={handleAddStaff}>
+              <div className="mb-4">
+                <input type="text" placeholder="Nombre del empleado" value={newStaffName} onChange={(e) => setNewStaffName(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required />
+              </div>
+              <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <input type="text" placeholder="PIN de 4 dígitos" value={newStaffPin} onChange={(e) => setNewStaffPin(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required />
+                <select value={selectedRoleId} onChange={(e) => setSelectedRoleId(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required>
+                  {roles.map(role => (
+                    <option key={role.id} value={role.id}>{role.name}</option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" className="w-full rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700">Añadir Empleado</button>
+            </form>
+          </div>
+
+          {/* Lista de personal existente */}
+          <div className="rounded-lg bg-white p-6 shadow-md">
+            <h2 className="mb-4 text-xl font-semibold">Mi Personal</h2>
+            {isLoadingStaff ? ( <p>Cargando personal...</p> ) 
+            : staff.length > 0 ? (
+              <ul>
+                {staff.map((member) => (
+                  <li key={member.id} className="flex items-center justify-between border-b py-3 last:border-none">
+                    <p className="font-semibold text-gray-800">{member.name}</p>
+                    <p className="rounded-full bg-gray-200 px-3 py-1 text-sm text-gray-700">{member.role.name}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : ( <p className="text-center text-gray-500">No has añadido personal.</p> )}
+          </div>
+        </section>
         <h1 className="mb-6 text-3xl font-bold text-gray-900">Gestión de Productos</h1>
 
         {/* Formulario para añadir nuevo producto */}
@@ -146,8 +263,8 @@ const handleUpdateSubmit = async (event: FormEvent) => {
               <input
                 type="text"
                 placeholder="Nombre del producto"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                value={newProductName}
+                onChange={(e) => setNewProductName(e.target.value)}
                 className="w-full rounded-md border border-gray-300 p-2"
                 required
               />
@@ -188,7 +305,7 @@ const handleUpdateSubmit = async (event: FormEvent) => {
         {/* Lista de productos existentes */}
         <div className="rounded-lg bg-white p-6 shadow-md">
           <h2 className="mb-4 text-xl font-semibold">Mi Menú</h2>
-          {isLoading ? (
+          {isLoadingProducts ? (
             <p>Cargando productos...</p>
           ) : products.length > 0 ? (
             <ul>
