@@ -51,7 +51,7 @@ model Product {
 model Staff {
   id        String   @id @default(cuid())
   name      String
-  pin       String   // Un PIN de 4 o 6 dígitos para un login rápido
+  pin       String  @unique   // Un PIN de 4 o 6 dígitos para un login rápido
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
