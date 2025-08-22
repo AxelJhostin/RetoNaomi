@@ -45,6 +45,7 @@ model Product {
   // Relación: Un producto pertenece a un usuario (dueño)
   ownerId     String
   owner       User      @relation(fields: [ownerId], references: [id])
+  orderItems OrderItem[]
 }
 
 // MODELO PARA EL PERSONAL (MESEROS, COCINEROS)
@@ -62,6 +63,7 @@ model Staff {
   // Relación: Un miembro del personal tiene un rol
   roleId    String
   role      Role     @relation(fields: [roleId], references: [id])
+  orders    Order[] 
 }
 
 enum TableStatus {
@@ -80,4 +82,35 @@ model Table {
   // Relación: Una mesa pertenece a un restaurante (dueño)
   ownerId   String
   owner     User        @relation(fields: [ownerId], references: [id])
+
+  orders    Order[] 
+
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  status    String      @default("OPEN") // OPEN, CLOSED, CANCELED
+  total     Float       @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relaciones
+  tableId   String
+  table     Table       @relation(fields: [tableId], references: [id])
+  staffId   String
+  staff     Staff       @relation(fields: [staffId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  quantity  Int
+  price     Float    // Precio al momento de la venta
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
 }
