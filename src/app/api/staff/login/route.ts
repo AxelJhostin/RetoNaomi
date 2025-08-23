@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       id: staffMember.id,
       name: staffMember.name,
       role: staffMember.role.name, // Guardamos el nombre del rol
+      ownerId: staffMember.ownerId,
     };
     const token = jwt.sign(tokenPayload, process.env.JWT_SECRET!, { expiresIn: '1d' });
 

@@ -1,6 +1,7 @@
 // src/app/api/orders/[id]/route.ts
 import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { pusherServer } from '@/lib/pusher';
 
 export async function GET(
   request: NextRequest,
@@ -45,10 +46,28 @@ export async function PUT(
       return NextResponse.json({ message: 'El estado es requerido' }, { status: 400 });
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: { status: status },
+    // Usamos una transacción para actualizar el pedido y la mesa al mismo tiempo
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      // 1. Actualizamos el pedido
+      const order = await tx.order.update({
+        where: { id: orderId },
+        data: { status: status },
+        include: { table: true, items: { include: { product: true } } }
+      });
+
+      // 2. Si el pedido se marca como listo, liberamos la mesa
+      if (status === 'READY') {
+        await tx.table.update({
+          where: { id: order.tableId },
+          data: { status: 'AVAILABLE' },
+        });
+      }
+
+      return order;
     });
+
+    // Anunciamos la actualización por Pusher
+    await pusherServer.trigger('kitchen-channel', 'order-update', updatedOrder);
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {

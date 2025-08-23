@@ -6,16 +6,27 @@ import { jwtVerify } from 'jose';
 // Función para OBTENER las mesas
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value;
-    if (!token) {
+    const ownerToken = request.cookies.get('token')?.value;
+    const staffToken = request.cookies.get('staff_token')?.value;
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+    let ownerId: string | null = null;
+
+    if (ownerToken) {
+      // Si es el dueño, obtenemos su ID del token de dueño
+      const { payload } = await jwtVerify(ownerToken, secret);
+      ownerId = payload.id as string;
+    } else if (staffToken) {
+      // Si es un empleado, obtenemos el ID del dueño desde el token de empleado
+      const { payload } = await jwtVerify(staffToken, secret);
+      ownerId = payload.ownerId as string;
+    }
+
+    if (!ownerId) {
       return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
     }
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-    const { payload } = await jwtVerify(token, secret);
-    const userId = payload.id as string;
 
     const tables = await prisma.table.findMany({
-      where: { ownerId: userId },
+      where: { ownerId: ownerId },
       orderBy: { name: 'asc' },
     });
 
