@@ -36,25 +36,30 @@ export default function WaiterPage() {
     router.push('/staff-login');
   };
 
-  const handleTableClick = async (tableId: string) => {
-    try {
+  const handleTableClick = async (table: Table) => {
+  try {
+    // Si la mesa está disponible, crea un nuevo pedido
+    if (table.status === 'AVAILABLE') {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tableId }),
+        body: JSON.stringify({ tableId: table.id }),
       });
       if (!res.ok) throw new Error('No se pudo crear el pedido');
-
       const newOrder = await res.json();
-
-      // Redirigir a la página de detalles del pedido (que crearemos después)
       router.push(`/order/${newOrder.id}`);
-
-    } catch (error) {
-      console.error(error);
-      alert('Error al iniciar el pedido. Inténtalo de nuevo.');
+    } else {
+      // Si la mesa está ocupada o cobrando, busca su pedido activo
+      const res = await fetch(`/api/tables/${table.id}/active-order`);
+      if (!res.ok) throw new Error('No se encontró un pedido activo para esta mesa');
+      const activeOrder = await res.json();
+      router.push(`/order/${activeOrder.id}`);
     }
-  };
+  } catch (error) {
+    console.error(error);
+    alert('Ocurrió un error. Inténtalo de nuevo.');
+  }
+};
 
   return (
     <main className="min-h-screen bg-gray-100 p-4">
@@ -78,14 +83,12 @@ export default function WaiterPage() {
               <button 
                 key={table.id}
                 // --- 1. Se añade la función para manejar el clic ---
-                onClick={() => handleTableClick(table.id)}
+                onClick={() => handleTableClick(table)}
                 // --- 2. El color cambia según el estado y se deshabilita si no está disponible ---
                 className={`aspect-square rounded-lg flex flex-col justify-center items-center text-white transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                   table.status === 'AVAILABLE' ? 'bg-green-500' : 
-                  table.status === 'OCCUPIED' ? 'bg-orange-500' : 'bg-red-500'
+                  table.status === 'OCCUPIED' ? 'bg-orange-500' : 'bg-purple-500' // <-- Cambio aquí
                 }`}
-                // --- 3. Se deshabilita el botón si la mesa no está libre ---
-                disabled={table.status !== 'AVAILABLE'}
               >
                 <span className="text-xl font-bold">{table.name}</span>
                 <span className="text-xs uppercase">{table.status}</span>

@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 // Definición de Tipos
 interface Product { id: string; name: string; price: number; }
 interface OrderItem { id: string; quantity: number; product: Product; }
-interface Order { id: string; table: { name: string }; items: OrderItem[]; total: number; }
+interface Order { id: string; table: { id: string; name: string }; items: OrderItem[]; total: number; }
 
 export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
@@ -29,6 +29,21 @@ export default function OrderDetailPage() {
             console.error('Error al enviar a cocina:', error);
             alert('No se pudo enviar el pedido a cocina.');
         }
+  };
+
+  const handleRequestBill = async () => {
+    if (!order) return;
+    try {
+      await fetch(`/api/tables/${order.table.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'BILLING' }),
+      });
+      router.push('/waiter');
+    } catch (error) {
+      console.error(error);
+      alert('Error al solicitar la cuenta.');
+    }
   };
 
   const fetchOrderDetails = useCallback(async () => {
@@ -121,12 +136,14 @@ export default function OrderDetailPage() {
             <span>Total</span>
             <span>${order.total.toFixed(2)}</span>
           </div>
-          <button 
-            onClick={handleSendToKitchen}
-            className="w-full bg-green-500 text-white p-4 rounded-lg mt-4 font-bold text-lg hover:bg-green-600"
-            >
-            Enviar a Cocina
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <button onClick={handleSendToKitchen} className="w-full bg-green-500 ...">
+              Enviar a Cocina
             </button>
+            <button onClick={handleRequestBill} className="w-full bg-yellow-500 ...">
+              Pedir Cuenta
+            </button>
+          </div>
         </div>
       </section>
     </main>
