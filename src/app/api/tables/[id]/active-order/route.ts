@@ -12,7 +12,7 @@ export async function GET(
       where: {
         tableId: tableId,
         status: {
-          in: ['OPEN', 'COOKING', 'READY']
+          in: ['OPEN', 'COOKING', 'READY', 'DELIVERED']
         }
       },
     });
