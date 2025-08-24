@@ -19,6 +19,7 @@ interface OrderUpdatePayload {
 export default function WaiterPage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [waiterName, setWaiterName] = useState<string>('');
   const router = useRouter();
 
   const fetchTables = useCallback(async () => {
@@ -35,6 +36,20 @@ export default function WaiterPage() {
   }, []);
 
   useEffect(() => {
+
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch('/api/staff/me');
+        const data = await res.json();
+        if (res.ok) {
+          setWaiterName(data.user.name);
+        }
+      } catch (error) {
+        console.error("No se pudo obtener el usuario actual", error);
+      }
+    };
+    fetchCurrentUser();
+
     fetchTables(); // Carga inicial
 
     // --- Lógica de Pusher para actualizaciones en tiempo real ---
@@ -114,7 +129,9 @@ export default function WaiterPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-4">
       <header className="mb-8 flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Vista de Mesero</h1>
+        <h1 className="text-3xl font-bold">
+          Mesero: <span className="text-blue-600">{waiterName || 'Cargando...'}</span>
+        </h1>
         <button onClick={handleLogout} className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600">
           Cerrar Sesión
         </button>
