@@ -5,6 +5,11 @@ import Pusher from 'pusher-js';
 interface OrderItem { id: string; quantity: number; product: { name: string }; }
 interface Order { id: string; table: { name: string }; items: OrderItem[]; status: string; }
 
+interface KitchenPayload {
+  type: 'new' | 'update';
+  data: Order;
+}
+
 export default function KitchenPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,16 +28,24 @@ export default function KitchenPage() {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
+
     const channel = pusher.subscribe('kitchen-channel');
-    channel.bind('new-order', (newOrder: Order) => {
-      setOrders((prevOrders) => [...prevOrders, newOrder]);
-    });
-    channel.bind('order-update', (updatedOrder: Order) => {
-      setOrders((prevOrders) => 
-        updatedOrder.status === 'READY'
-          ? prevOrders.filter(order => order.id !== updatedOrder.id)
-          : prevOrders.map(order => order.id === updatedOrder.id ? updatedOrder : order)
-      );
+
+    // --- ¡CAMBIO AQUÍ! ---
+    // Un único "oyente" para todos los eventos de la cocina
+    channel.bind('kitchen-update', (payload: KitchenPayload) => {
+      if (payload.type === 'new') {
+        // Si es un pedido nuevo, lo añadimos
+        setOrders((prev) => [...prev, payload.data]);
+      } else if (payload.type === 'update') {
+        // Si es una actualización
+        setOrders((prev) => 
+          // Si el estado es READY, lo quitamos. Si no, lo actualizamos.
+          payload.data.status === 'READY'
+            ? prev.filter(order => order.id !== payload.data.id)
+            : prev.map(order => order.id === payload.data.id ? payload.data : order)
+        );
+      }
     });
 
     return () => {
@@ -40,7 +53,7 @@ export default function KitchenPage() {
       pusher.disconnect();
     };
   }, []);
-  
+
   const handleMarkAsReady = async (orderId: string) => {
     try {
       await fetch(`/api/orders/${orderId}`, {

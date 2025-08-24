@@ -31,7 +31,13 @@ export async function POST(request: NextRequest) {
     });
 
     await pusherServer.trigger('tables-channel', 'table-update', updatedTable);
-    await pusherServer.trigger('kitchen-channel', 'new-order', createdOrder);
+
+    // --- ¡CAMBIO AQUÍ! ---
+    // Enviamos el evento unificado con su tipo
+    await pusherServer.trigger('kitchen-channel', 'kitchen-update', { 
+      type: 'new', 
+      data: createdOrder 
+    });
 
     return NextResponse.json(createdOrder, { status: 201 });
   } catch (error) {

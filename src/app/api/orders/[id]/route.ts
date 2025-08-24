@@ -46,17 +46,24 @@ export async function PUT(
       return NextResponse.json({ message: 'El estado es requerido' }, { status: 400 });
     }
 
-    // Ahora, esta función solo actualiza el estado del pedido.
-    // Ya no toca la mesa, lo que corrige el bug.
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status: status },
       include: { table: true, items: { include: { product: true } } }
     });
 
-    // Anunciamos la actualización a la cocina y a los meseros
-    await pusherServer.trigger('kitchen-channel', 'order-update', updatedOrder);
-    await pusherServer.trigger('waiter-channel', 'order-update', updatedOrder);
+    // --- ¡CAMBIO AQUÍ! ---
+    // Anunciamos la actualización con el evento unificado
+    await pusherServer.trigger('kitchen-channel', 'kitchen-update', {
+      type: 'update',
+      data: updatedOrder
+    });
+
+    // También notificamos a los meseros sobre el cambio de la mesa
+    if (status === 'READY' || status === 'DELIVERED') {
+       // (Podríamos necesitar una lógica más específica aquí en el futuro)
+    }
+
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {
