@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verificamos el token del dueño del restaurante
+    // Verificación del token del dueño (sin cambios)
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
@@ -14,13 +14,33 @@ export async function GET(request: NextRequest) {
     const { payload } = await jwtVerify(token, secret);
     const userId = payload.id as string;
 
-    // Buscamos todos los pedidos cerrados (pagados) que pertenecen al personal de este dueño
+    // --- ¡NUEVA LÓGICA PARA LEER FECHAS! ---
+    const { searchParams } = new URL(request.url);
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+
+    // Creamos el filtro de fecha para la consulta
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    if (startDateParam) {
+      dateFilter.gte = new Date(startDateParam); // gte = mayor o igual que
+    }
+    if (endDateParam) {
+      // Añadimos un día y restamos un segundo para incluir todo el día final
+      const endDate = new Date(endDateParam);
+
+      endDate.setHours(23, 59, 59, 999);
+      dateFilter.lte = endDate; // lte = menor o igual que
+    }
+    // --- FIN DE LA LÓGICA DE FECHAS ---
+
     const closedOrders = await prisma.order.findMany({
       where: {
         status: 'CLOSED',
         staff: {
           ownerId: userId,
         },
+        // --- ¡APLICAMOS EL FILTRO DE FECHA! ---
+        createdAt: dateFilter,
       },
       include: {
         items: {
@@ -31,10 +51,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 1. Calculamos el total de ventas sumando los totales de cada pedido
+    // El resto de la lógica de cálculo (totalSales, topProducts) no cambia
     const totalSales = closedOrders.reduce((sum, order) => sum + order.total, 0);
 
-    // 2. Contamos cuántas veces se vendió cada producto
     const productSalesCount = new Map<string, { count: number, name: string }>();
     closedOrders.forEach(order => {
       order.items.forEach(item => {
@@ -43,7 +62,6 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // 3. Convertimos el mapa a un array y lo ordenamos para ver los más vendidos
     const topProducts = Array.from(productSalesCount.values()).sort((a, b) => b.count - a.count);
 
     return NextResponse.json({

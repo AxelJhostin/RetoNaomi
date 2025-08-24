@@ -55,6 +55,7 @@ model Product {
   ownerId     String
   owner       User      @relation(fields: [ownerId], references: [id])
   orderItems OrderItem[]
+  modifierGroups ModifierGroup[]
 }
 
 // MODELO PARA EL PERSONAL (MESEROS, COCINEROS)
@@ -122,4 +123,32 @@ model OrderItem {
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade) // <-- AÑADE onDelete: Cascade
   productId String
   product   Product  @relation(fields: [productId], references: [id])
+}
+
+// GRUPOS DE MODIFICADORES (Ej: "Añadir Extras", "Elige tu salsa")
+model ModifierGroup {
+  id        String           @id @default(cuid())
+  name      String           // "Añadir Extras"
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Relación: Un grupo pertenece a un producto
+  productId String
+  product   Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Relación: Un grupo tiene muchas opciones
+  options   ModifierOption[]
+}
+
+// OPCIONES DENTRO DE UN GRUPO (Ej: "Queso Extra", "Salsa BBQ")
+model ModifierOption {
+  id        String   @id @default(cuid())
+  name      String   // "Queso Extra"
+  price     Float    // +0.50 (puede ser 0 si no tiene costo extra)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación: Una opción pertenece a un grupo de modificadores
+  groupId   String
+  group     ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 }
