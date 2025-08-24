@@ -1,8 +1,8 @@
-// src/app/api/orders/[id]/route.ts
 import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { pusherServer } from '@/lib/pusher';
 
+// La función GET no necesita cambios, está bien como la tienes.
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -13,10 +13,10 @@ export async function GET(
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        table: true, // Incluye info de la mesa
-        items: {     // Incluye los productos del pedido
+        table: true,
+        items: {
           include: {
-            product: true, // Incluye info de cada producto
+            product: true,
           },
         },
       },
@@ -33,41 +33,30 @@ export async function GET(
   }
 }
 
+// --- ¡ESTA ES LA FUNCIÓN CORREGIDA! ---
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const orderId = params.id;
-    const body = await request.json();
-    const { status } = body;
+    const { status } = await request.json();
 
     if (!status) {
       return NextResponse.json({ message: 'El estado es requerido' }, { status: 400 });
     }
 
-    // Usamos una transacción para actualizar el pedido y la mesa al mismo tiempo
-    const updatedOrder = await prisma.$transaction(async (tx) => {
-      // 1. Actualizamos el pedido
-      const order = await tx.order.update({
-        where: { id: orderId },
-        data: { status: status },
-        include: { table: true, items: { include: { product: true } } }
-      });
-
-      // 2. Si el pedido se marca como listo, liberamos la mesa
-      if (status === 'READY') {
-        await tx.table.update({
-          where: { id: order.tableId },
-          data: { status: 'AVAILABLE' },
-        });
-      }
-
-      return order;
+    // Ahora, esta función solo actualiza el estado del pedido.
+    // Ya no toca la mesa, lo que corrige el bug.
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { status: status },
+      include: { table: true, items: { include: { product: true } } }
     });
 
-    // Anunciamos la actualización por Pusher
+    // Anunciamos la actualización a la cocina y a los meseros
     await pusherServer.trigger('kitchen-channel', 'order-update', updatedOrder);
+    await pusherServer.trigger('waiter-channel', 'order-update', updatedOrder);
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {
