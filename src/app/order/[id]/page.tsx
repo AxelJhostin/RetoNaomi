@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 // Definición de Tipos
 interface Product { id: string; name: string; price: number; }
 interface OrderItem { id: string; quantity: number; product: Product; }
-interface Order { id: string; table: { id: string; name: string }; items: OrderItem[]; total: number; }
+interface Order { id: string; table: { id: string; name: string }; items: OrderItem[]; total: number; status: string; }
 
 export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
@@ -29,6 +29,21 @@ export default function OrderDetailPage() {
             console.error('Error al enviar a cocina:', error);
             alert('No se pudo enviar el pedido a cocina.');
         }
+  };
+
+  const handleDeliver = async () => {
+    try {
+      await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'DELIVERED' }), // Cambiamos el estado
+      });
+      // Recargamos los datos para que la UI muestre el siguiente botón
+      fetchOrderDetails(); 
+    } catch (error) {
+      console.error('Error al marcar como entregado:', error);
+      alert('No se pudo marcar el pedido como entregado.');
+    }
   };
 
   const handleRequestBill = async () => {
@@ -136,15 +151,37 @@ export default function OrderDetailPage() {
             <span>Total</span>
             <span>${order.total.toFixed(2)}</span>
           </div>
+
           <div className="grid grid-cols-2 gap-4 mt-4">
-            <button onClick={handleSendToKitchen} className="w-full bg-green-500 ...">
+          {/* El botón "Enviar a Cocina" solo aparece si el pedido está 'OPEN' */}
+          {order.status === 'OPEN' && (
+            <button onClick={handleSendToKitchen} className="w-full bg-green-500 text-white p-3 rounded-lg font-bold hover:bg-green-600 col-span-2">
               Enviar a Cocina
             </button>
-            <button onClick={handleRequestBill} className="w-full bg-yellow-500 ...">
-              Pedir Cuenta
+          )}
+
+          {/* Si el pedido está 'COOKING', mostramos un estado */}
+          {order.status === 'COOKING' && (
+            <div className="w-full bg-gray-200 text-gray-700 p-3 rounded-lg font-bold text-center col-span-2">
+              En preparación... 🍳
+            </div>
+          )}
+
+          {/* Si el pedido está 'READY', el mesero puede marcarlo como entregado */}
+          {order.status === 'READY' && (
+            <button onClick={handleDeliver} className="w-full bg-blue-500 text-white p-3 rounded-lg font-bold hover:bg-blue-600 col-span-2">
+              Marcar como Entregado
             </button>
-          </div>
+          )}
+
+          {/* El botón de Pedir Cuenta solo aparece después de ser entregado */}
+          {order.status === 'DELIVERED' && (
+            <button onClick={handleRequestBill} className="w-full bg-yellow-500 text-white p-3 rounded-lg font-bold hover:bg-yellow-600 col-span-2">
+              Pedir Cuenta y Liberar
+            </button>
+          )}
         </div>
+      </div>
       </section>
     </main>
   );

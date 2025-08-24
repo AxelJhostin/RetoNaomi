@@ -1,20 +1,26 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Pusher from 'pusher-js'; // <-- Necesitamos este import para tiempo real
+import Pusher from 'pusher-js';
 
+// --- Definición de Tipos ---
 interface Table {
   id: string;
   name: string;
   status: 'AVAILABLE' | 'OCCUPIED' | 'BILLING';
 }
+// Tipo para el evento que viene de la cocina
+interface OrderUpdatePayload {
+  status: string;
+  table: Table;
+}
 
+// --- Componente de la Página de Mesero ---
 export default function WaiterPage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Usamos useCallback para que la función no se recree innecesariamente
   const fetchTables = useCallback(async () => {
     try {
       const res = await fetch('/api/tables');
@@ -29,25 +35,38 @@ export default function WaiterPage() {
   }, []);
 
   useEffect(() => {
-    fetchTables(); // Carga inicial de las mesas
+    fetchTables(); // Carga inicial
 
-    // --- Lógica de Pusher para actualizaciones en tiempo real --- // <--
+    // --- Lógica de Pusher para actualizaciones en tiempo real ---
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
-    const channel = pusher.subscribe('tables-channel');
-    
-    // Cuando recibimos un anuncio de 'table-update'
-    channel.bind('table-update', (updatedTable: Table) => {
-      // Actualizamos la mesa correspondiente en nuestra lista
+
+    // 1. Escuchamos el canal de las mesas para saber si una se ocupa, libera, etc.
+    const tablesChannel = pusher.subscribe('tables-channel');
+    tablesChannel.bind('table-update', (updatedTable: Table) => {
       setTables((currentTables) =>
         currentTables.map((t) => (t.id === updatedTable.id ? updatedTable : t))
       );
     });
 
-    // Limpiamos la conexión al salir
+    // 2. Escuchamos el canal de la cocina para saber si un pedido está listo
+    const kitchenChannel = pusher.subscribe('kitchen-channel');
+    kitchenChannel.bind('order-update', (payload: OrderUpdatePayload) => {
+      // Cuando un pedido se marca como 'READY', la API nos envía la mesa actualizada
+      if (payload.status === 'READY') {
+        // Podríamos querer un estado nuevo como 'SERVING' para la mesa aquí
+        // Por ahora, solo actualizamos la info de la mesa
+        setTables((currentTables) =>
+          currentTables.map((t) => (t.id === payload.table.id ? payload.table : t))
+        );
+      }
+    });
+
+    // 3. Limpiamos ambas conexiones al salir
     return () => {
       pusher.unsubscribe('tables-channel');
+      pusher.unsubscribe('kitchen-channel');
       pusher.disconnect();
     };
   }, [fetchTables]);
@@ -80,21 +99,15 @@ export default function WaiterPage() {
     }
   };
 
-  // --- NUEVA FUNCIÓN PARA COBRAR --- // <--
   const handleMarkAsPaid = async (table: Table) => {
     try {
-      // 1. Encontrar el pedido activo de la mesa
       const res = await fetch(`/api/tables/${table.id}/active-order`);
       if (!res.ok) throw new Error('No se encontró un pedido para cobrar');
       const activeOrder = await res.json();
-
-      // 2. Llamar a la API para cerrar ese pedido
       await fetch(`/api/orders/${activeOrder.id}/close`, { method: 'POST' });
-      
-      // La UI se actualizará sola gracias a Pusher, no necesitamos hacer nada más aquí.
     } catch (error) {
-        console.error(error);
-        alert('Error al cobrar el pedido.');
+      console.error(error);
+      alert('Error al cobrar el pedido.');
     }
   };
 
@@ -112,7 +125,6 @@ export default function WaiterPage() {
         {isLoading ? (<p>Cargando mesas...</p>) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {tables.map((table) => (
-              // --- ESTRUCTURA MODIFICADA PARA EL BOTÓN DE COBRAR --- // <--
               <div key={table.id} className="flex flex-col gap-2">
                 <button 
                   onClick={() => handleTableClick(table)}
@@ -124,7 +136,6 @@ export default function WaiterPage() {
                   <span className="text-xl font-bold">{table.name}</span>
                   <span className="text-xs uppercase">{table.status}</span>
                 </button>
-                {/* Mostramos el botón de Cobrar solo si la mesa está en estado BILLING */}
                 {table.status === 'BILLING' && (
                   <button 
                     onClick={() => handleMarkAsPaid(table)}
