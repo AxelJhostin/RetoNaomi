@@ -25,14 +25,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const products = await prisma.product.findMany({
-      where: {
-        ownerId: userId,
+    // src/app/api/products/route.ts -> dentro de la función GET
+
+const products = await prisma.product.findMany({
+  where: {
+    ownerId: userId,
+  },
+  orderBy: {
+    name: 'asc',
+  },
+  // --- AÑADE ESTO ---
+  include: {
+    modifierGroups: {
+      include: {
+        options: {
+          orderBy: {
+            price: 'asc',
+          },
+        },
       },
       orderBy: {
-        name: 'asc',
+        createdAt: 'asc',
       },
-    });
+    },
+  },
+  // --------------------
+});
 
     return NextResponse.json(products);
   } catch (error) {

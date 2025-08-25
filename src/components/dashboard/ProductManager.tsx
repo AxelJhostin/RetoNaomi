@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Product {
   id: string;
@@ -93,7 +94,11 @@ export default function ProductManager() {
                 </div>
                 <div className="flex w-full items-center justify-between sm:w-auto sm:justify-end shrink-0">
                   <p className="font-mono text-lg font-semibold text-blue-600">${product.price.toFixed(2)}</p>
-                  <button onClick={() => handleEditClick(product)} className="ml-4 rounded-md bg-yellow-500 px-3 py-1 text-sm text-white hover:bg-yellow-600">Editar</button>
+                  <Link href={`/dashboard/products/${product.id}`}>
+                    <button className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
+                      Editar
+                    </button>
+                  </Link>
                   <button onClick={() => handleDelete(product.id)} className="ml-2 rounded-md bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600">Eliminar</button>
                 </div>
               </li>
