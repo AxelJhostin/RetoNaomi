@@ -20,42 +20,67 @@ async function getUserIdFromToken(request: NextRequest) {
 // GET -> Para obtener TODOS los productos del usuario
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserIdFromToken(request);
-    if (!userId) {
+    const staffToken = request.cookies.get('staff_token')?.value;
+    const ownerToken = request.cookies.get('token')?.value;
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+    
+    let ownerId: string | null = null;
+
+    // Priorizamos verificar si es un miembro del personal
+    if (staffToken) {
+      try {
+        const { payload } = await jwtVerify(staffToken, secret);
+        ownerId = payload.ownerId as string;
+      } catch (error) {
+        // El token del personal es inválido, no hacemos nada y dejamos que falle después
+      }
+    } 
+    // Si no es personal, verificamos si es el dueño
+    else if (ownerToken) {
+      try {
+        const { payload } = await jwtVerify(ownerToken, secret);
+        ownerId = payload.id as string;
+      } catch (error) {
+        // El token del dueño es inválido
+      }
+    }
+
+    // Si después de verificar ambos no tenemos un ownerId, denegamos el acceso
+    if (!ownerId) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // src/app/api/products/route.ts -> dentro de la función GET
-
-const products = await prisma.product.findMany({
-  where: {
-    ownerId: userId,
-  },
-  orderBy: {
-    name: 'asc',
-  },
-  // --- AÑADE ESTO ---
-  include: {
-    modifierGroups: {
+    // Si llegamos aquí, tenemos permiso. Buscamos los productos del restaurante.
+    const products = await prisma.product.findMany({
+      where: {
+        ownerId: ownerId,
+      },
+      orderBy: {
+        name: 'asc',
+      },
       include: {
-        options: {
+        modifierGroups: {
+          include: {
+            options: {
+              orderBy: {
+                price: 'asc',
+              },
+            },
+          },
           orderBy: {
-            price: 'asc',
+            createdAt: 'asc',
           },
         },
       },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    },
-  },
-  // --------------------
-});
+    });
 
     return NextResponse.json(products);
   } catch (error) {
     console.error("Error fetching products:", error);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Something went wrong fetching products.' },
+      { status: 500 }
+    );
   }
 }
 

@@ -1,10 +1,21 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import ModifierModal from '@/components/order/ModifierModal';
 
 // --- Definición de Tipos ---
-interface Product { id: string; name: string; price: number; }
-interface OrderItem { id: string; quantity: number; product: Product; }
+interface ModifierOption {
+  id: string;
+  name: string;
+  price: number;
+}
+interface ModifierGroup {
+  id: string;
+  name: string;
+  options: ModifierOption[];
+}
+interface Product { id: string; name: string; price: number;modifierGroups: ModifierGroup[]; }
+interface OrderItem { id: string; quantity: number; product: { id: string, name: string, price: number }; }
 interface Order { 
   id: string; 
   table: { id: string; name: string }; 
@@ -20,6 +31,9 @@ export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
+  // --- Estados para controlar el Modal ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId) return;
@@ -46,6 +60,35 @@ export default function OrderDetailPage() {
   useEffect(() => {
     fetchOrderDetails();
   }, [fetchOrderDetails]);
+
+  // --- Lógica para manejar el clic en un producto ---
+  const handleProductClick = (product: Product) => {
+    // Si el producto TIENE modificadores, abrimos el modal
+    if (product.modifierGroups && product.modifierGroups.length > 0) {
+      setSelectedProduct(product);
+      setIsModalOpen(true);
+    } else {
+      // Si NO tiene, lo añadimos directamente como antes
+      handleAddProductToOrder(product.id);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
+  
+  const handleAddToCartWithModifiers = (
+    product: Product, 
+    selectedOptions: ModifierOption[]
+  ) => {
+    console.log('Añadiendo al carrito:', product.name);
+    console.log('Opciones seleccionadas:', selectedOptions);
+    // TODO: En el siguiente paso, conectaremos esto a la API
+    
+    // Por ahora, solo cerramos el modal
+    handleCloseModal();
+  };
 
   const handleAddProductToOrder = async (productId: string) => {
     try {
@@ -121,22 +164,24 @@ export default function OrderDetailPage() {
   if (!order) return <p className="p-8">Pedido no encontrado.</p>;
 
   return (
+     <>
     <main className="grid grid-cols-1 md:grid-cols-2 h-screen">
       <section className="bg-gray-50 p-6 overflow-y-auto">
         <h1 className="text-2xl font-bold mb-4">Añadir a Pedido</h1>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {menu.map(product => (
-            <button 
-              key={product.id}
-              onClick={() => handleAddProductToOrder(product.id)}
-              className="p-4 border rounded-lg bg-white shadow hover:bg-blue-50 disabled:opacity-50"
-              disabled={order.status !== 'OPEN'}
-            >
-              <p className="font-semibold">{product.name}</p>
-              <p className="text-sm text-gray-600">${product.price.toFixed(2)}</p>
-            </button>
-          ))}
-        </div>
+            {menu.map(product => (
+              <button 
+                key={product.id}
+                // --- El cambio clave está aquí ---
+                onClick={() => handleProductClick(product)}
+                className="p-4 border rounded-lg bg-white shadow hover:bg-blue-50 disabled:opacity-50"
+                disabled={order.status !== 'OPEN'}
+              >
+                <p className="font-semibold">{product.name}</p>
+                <p className="text-sm text-gray-600">${product.price.toFixed(2)}</p>
+              </button>
+            ))}
+          </div>
       </section>
 
       <section className="p-6 bg-white flex flex-col">
@@ -181,5 +226,14 @@ export default function OrderDetailPage() {
         </div>
       </section>
     </main>
+    {selectedProduct && (
+        <ModifierModal
+          isOpen={isModalOpen}
+          product={selectedProduct}
+          onClose={handleCloseModal}
+          onAddToCart={handleAddToCartWithModifiers}
+        />
+      )}
+      </>
   );
 }
