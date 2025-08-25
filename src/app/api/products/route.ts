@@ -1,4 +1,7 @@
 // src/app/api/products/route.ts
+
+export const dynamic = 'force-dynamic';
+
 import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { jwtVerify } from 'jose';
@@ -49,7 +52,7 @@ export async function GET(request: NextRequest) {
     if (!ownerId) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
-
+    console.log('[API /products] Buscando productos para ownerId:', ownerId);
     // Si llegamos aquí, tenemos permiso. Buscamos los productos del restaurante.
     const products = await prisma.product.findMany({
       where: {
