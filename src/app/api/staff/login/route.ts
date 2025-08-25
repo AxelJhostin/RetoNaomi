@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       where: { pin },
       include: { role: true }, // Incluimos el rol para saber a dónde redirigir
     });
-
+    console.log('Empleado encontrado en la BD:', staffMember);
     if (!staffMember) {
       return NextResponse.json({ message: 'PIN inválido' }, { status: 401 });
     }

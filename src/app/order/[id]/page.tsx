@@ -78,17 +78,34 @@ export default function OrderDetailPage() {
     setSelectedProduct(null);
   };
   
-  const handleAddToCartWithModifiers = (
-    product: Product, 
-    selectedOptions: ModifierOption[]
-  ) => {
-    console.log('Añadiendo al carrito:', product.name);
-    console.log('Opciones seleccionadas:', selectedOptions);
-    // TODO: En el siguiente paso, conectaremos esto a la API
-    
-    // Por ahora, solo cerramos el modal
+  const handleAddToCartWithModifiers = async (
+  product: Product, 
+  selectedOptions: ModifierOption[]
+) => {
+  try {
+    const res = await fetch(`/api/orders/${orderId}/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId: product.id,
+        quantity: 1,
+        options: selectedOptions, // <-- ¡Aquí enviamos las opciones a la API!
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Error al añadir el item con modificadores');
+    }
+
+    // Si todo fue bien, refrescamos los detalles del pedido y cerramos el modal
+    fetchOrderDetails();
     handleCloseModal();
-  };
+
+  } catch (error) {
+    console.error("Error adding item with modifiers:", error);
+    alert('No se pudo añadir el producto al pedido.');
+  }
+};
 
   const handleAddProductToOrder = async (productId: string) => {
     try {
