@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
-import ProductManager from '@/components/ProductManager';
-import StaffManager from '@/components/StaffManager';
-import TableManager from '@/components/TableManager';
+import ProductManager from '@/components/dashboard/ProductManager';
+import StaffManager from '@/components/dashboard/StaffManager';
+import TableManager from '@/components/dashboard/TableManager';
 import Link from 'next/link';
 
 export default function DashboardPage() {

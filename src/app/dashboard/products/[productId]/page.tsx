@@ -18,8 +18,10 @@ export default function ProductDetailPage() {
 
   const fetchProductDetails = useCallback(async () => {
     if (!productId) return;
+    setIsLoading(true);
     try {
       const res = await fetch(`/api/products/${productId}`);
+      if (!res.ok) throw new Error('Producto no encontrado');
       const data = await res.json();
       setProduct(data);
     } catch (error) {
@@ -60,18 +62,20 @@ export default function ProductDetailPage() {
 
         <div className="mt-8 rounded-lg bg-white p-6 shadow-md">
           <h2 className="text-xl font-semibold mb-4">Grupos de Modificadores</h2>
-          {/* Aquí mostraremos los grupos existentes */}
           <div className="space-y-4 mb-6">
-            {product.modifierGroups.map(group => (
-              <div key={group.id} className="border p-4 rounded-md">
-                <p className="font-bold">{group.name}</p>
-                {/* Más adelante aquí pondremos las opciones */}
-              </div>
-            ))}
+            {product.modifierGroups.length > 0 ? (
+              product.modifierGroups.map(group => (
+                <div key={group.id} className="border p-4 rounded-md">
+                  <p className="font-bold">{group.name}</p>
+                  {/* Más adelante aquí pondremos las opciones */}
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">Este producto aún no tiene grupos de modificadores.</p>
+            )}
           </div>
 
-          {/* Formulario para añadir un nuevo grupo */}
-          <form onSubmit={handleAddGroup} className="flex gap-4">
+          <form onSubmit={handleAddGroup} className="flex gap-4 border-t pt-6">
             <input
               type="text"
               placeholder="Nombre del nuevo grupo (ej: Elige tu salsa)"

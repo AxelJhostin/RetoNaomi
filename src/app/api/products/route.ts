@@ -1,60 +1,74 @@
 // src/app/api/products/route.ts
-import prisma from '@/lib/prisma'; // <-- ¡El gran cambio!
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
+import prisma from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 
-export async function GET() {
+// Helper para verificar el token y obtener el ID del usuario
+async function getUserIdFromToken(request: NextRequest) {
+  const token = request.cookies.get('token')?.value;
+  if (!token) return null;
+
   try {
-    const products = await prisma.product.findMany();
-    return NextResponse.json(products, { status: 200 });
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+    const { payload } = await jwtVerify(token, secret);
+    return payload.id as string;
   } catch (error) {
-    console.error('Error al obtener los productos:', error);
-    return NextResponse.json(
-      { message: 'Ocurrió un error al obtener los productos' },
-      { status: 500 }
-    );
+    return null;
   }
 }
 
-export async function POST(request: NextRequest) {
+// GET -> Para obtener TODOS los productos del usuario
+export async function GET(request: NextRequest) {
   try {
-    // Obtenemos el token del usuario desde las cookies
-    const token = request.cookies.get('token')?.value;
-    if (!token) {
-      return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
+    const userId = await getUserIdFromToken(request);
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Verificamos el token y extraemos los datos del usuario (el payload)
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-    const { payload } = await jwtVerify(token, secret);
-    const userId = payload.id as string; // Obtenemos el ID del usuario logueado
-
-    // Obtenemos los datos del nuevo producto del cuerpo de la petición
-    const body = await request.json();
-    const { name, description, price, category } = body;
-
-    if (!name || !price) {
-      return NextResponse.json({ message: 'El nombre y el precio son requeridos' }, { status: 400 });
-    }
-
-    // Creamos el nuevo producto en la base de datos, conectándolo con el usuario dueño
-    const newProduct = await prisma.product.create({
-      data: {
-        name,
-        description,
-        price,
-        category,
-        ownerId: userId, // ¡Aquí conectamos el producto al dueño!
+    const products = await prisma.product.findMany({
+      where: {
+        ownerId: userId,
+      },
+      orderBy: {
+        name: 'asc',
       },
     });
 
-    return NextResponse.json(newProduct, { status: 201 }); // 201 = Created
+    return NextResponse.json(products);
   } catch (error) {
-    console.error('Error al crear el producto:', error);
-    return NextResponse.json(
-      { message: 'Ocurrió un error al crear el producto' },
-      { status: 500 }
-    );
+    console.error("Error fetching products:", error);
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+  }
+}
+
+// POST -> Para CREAR un nuevo producto
+export async function POST(request: NextRequest) {
+  try {
+    const userId = await getUserIdFromToken(request);
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { name, price, category, description } = body;
+
+    if (!name || price === undefined) {
+        return NextResponse.json({ error: 'Name and price are required' }, { status: 400 });
+    }
+
+    const newProduct = await prisma.product.create({
+      data: {
+        name,
+        price: parseFloat(price),
+        category,
+        description,
+        ownerId: userId,
+      },
+    });
+
+    return NextResponse.json(newProduct, { status: 201 });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
