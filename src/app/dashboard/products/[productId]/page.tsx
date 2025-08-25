@@ -5,6 +5,8 @@ import { useState, useEffect, FormEvent, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ModifierGroupCard from '@/components/modifiers/ModifierGroupCard';
+import ProductEditForm from '@/components/products/ProductEditForm';
+
 // Definimos una interfaz más completa para el producto
 interface ModifierOption {
   id: string;
@@ -95,30 +97,27 @@ export default function ProductDetailPage() {
           &larr; Volver al Dashboard
         </Link>
         
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-            <p className="mt-1 text-lg text-gray-600">{product.description || 'Sin descripción.'}</p>
-            <div className="flex items-baseline gap-4 mt-2">
-                <span className="text-2xl font-mono font-bold text-blue-700">${product.price.toFixed(2)}</span>
-                {product.category && <span className="bg-gray-200 text-gray-700 text-sm font-medium px-2.5 py-0.5 rounded-full">{product.category}</span>}
-            </div>
-        </div>
+        {/* FORMULARIO PARA EDITAR EL PRODUCTO */}
+        <ProductEditForm product={product} onProductUpdate={fetchProductDetails} />
 
+        {/* TARJETA PARA GESTIONAR MODIFICADORES */}
         <div className="rounded-lg bg-white p-6 shadow-md">
           <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Grupos de Modificadores</h2>
-            <div className="space-y-4 mb-6">
-                {product.modifierGroups.length > 0 ? (
-                    product.modifierGroups.map(group => (
-                    <ModifierGroupCard 
-                        key={group.id} 
-                        group={group} 
-                        onUpdate={fetchProductDetails} 
-                    />
-                    ))
-                ) : (
-                    <p className="text-gray-500 italic">Este producto aún no tiene grupos de modificadores.</p>
-                )}
-                </div>
+          
+          <div className="space-y-4 mb-6">
+            {product.modifierGroups.length > 0 ? (
+              product.modifierGroups.map(group => (
+                <ModifierGroupCard 
+                  key={group.id} 
+                  group={group} 
+                  onUpdate={fetchProductDetails} 
+                />
+              ))
+            ) : (
+              <p className="text-gray-500 italic">Este producto aún no tiene grupos de modificadores.</p>
+            )}
+          </div>
+
           <form onSubmit={handleAddGroup} className="flex flex-col sm:flex-row gap-4 border-t pt-6">
             <input
               type="text"
@@ -133,7 +132,9 @@ export default function ProductDetailPage() {
             </button>
           </form>
         </div>
+
       </div>
     </main>
   );
 }
+// src/components/products/ProductEditForm.tsx
