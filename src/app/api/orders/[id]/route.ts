@@ -32,7 +32,6 @@ export async function GET(
   }
 }
 
-// --- ESTA ES LA FUNCIÓN PUT CORREGIDA Y FINAL ---
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -45,31 +44,39 @@ export async function PUT(
       return NextResponse.json({ message: 'El estado es requerido' }, { status: 400 });
     }
 
-    // 1. Actualizamos la orden
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status: status },
+      include: {
+        table: true, // Incluimos la mesa para saber cuál notificar
+      }
     });
 
-    // 2. Si la orden va a cocina, buscamos TODOS sus detalles
+    // Si la orden va a cocina, notificamos a la cocina
     if (status === 'COOKING') {
       const detailedOrder = await prisma.order.findUnique({
         where: { id: orderId },
         include: {
           table: true,
           items: {
-            // ¡Esta es la parte clave que faltaba!
-            // Le decimos que incluya el producto de cada item
             include: {
               product: true,
             },
           },
         },
       });
-      
-      // 3. Enviamos el objeto completo y detallado a la cocina
       await pusherServer.trigger('kitchen-channel', 'new-order', detailedOrder);
     }
+
+    // --- LÓGICA AÑADIDA ---
+    // Si la orden está lista, notificamos a los meseros
+    if (status === 'READY') {
+      await pusherServer.trigger('waiter-channel', 'order-ready', {
+        tableId: updatedOrder.tableId,
+        tableName: updatedOrder.table.name
+      });
+    }
+    // ----------------------
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {

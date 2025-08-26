@@ -1,3 +1,4 @@
+//src/app/waiter/page.tsx
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,11 +9,7 @@ interface Table {
   id: string;
   name: string;
   status: 'AVAILABLE' | 'OCCUPIED' | 'BILLING';
-}
-// Tipo para el evento que viene de la cocina
-interface OrderUpdatePayload {
-  status: string;
-  table: Table;
+  isFoodReady?: boolean; // Nuevo estado para la alerta visual
 }
 
 // --- Componente de la Página de Mesero ---
@@ -36,7 +33,6 @@ export default function WaiterPage() {
   }, []);
 
   useEffect(() => {
-
     const fetchCurrentUser = async () => {
       try {
         const res = await fetch('/api/staff/me');
@@ -49,39 +45,28 @@ export default function WaiterPage() {
       }
     };
     fetchCurrentUser();
+    fetchTables();
 
-    fetchTables(); // Carga inicial
-
-    // --- Lógica de Pusher para actualizaciones en tiempo real ---
+    // --- Lógica de Pusher para recibir notificaciones ---
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
 
-    // 1. Escuchamos el canal de las mesas para saber si una se ocupa, libera, etc.
-    const tablesChannel = pusher.subscribe('tables-channel');
-    tablesChannel.bind('table-update', (updatedTable: Table) => {
+    const waiterChannel = pusher.subscribe('waiter-channel');
+    
+    // Escuchamos el evento 'order-ready' que envía la cocina
+    waiterChannel.bind('order-ready', (data: { tableId: string }) => {
       setTables((currentTables) =>
-        currentTables.map((t) => (t.id === updatedTable.id ? updatedTable : t))
+        currentTables.map((t) =>
+          t.id === data.tableId ? { ...t, isFoodReady: true } : t
+        )
       );
     });
+    
+    // (Aquí podrías añadir más listeners en el futuro, como 'table-update')
 
-    // 2. Escuchamos el canal de la cocina para saber si un pedido está listo
-    const kitchenChannel = pusher.subscribe('kitchen-channel');
-    kitchenChannel.bind('order-update', (payload: OrderUpdatePayload) => {
-      // Cuando un pedido se marca como 'READY', la API nos envía la mesa actualizada
-      if (payload.status === 'READY') {
-        // Podríamos querer un estado nuevo como 'SERVING' para la mesa aquí
-        // Por ahora, solo actualizamos la info de la mesa
-        setTables((currentTables) =>
-          currentTables.map((t) => (t.id === payload.table.id ? payload.table : t))
-        );
-      }
-    });
-
-    // 3. Limpiamos ambas conexiones al salir
     return () => {
-      pusher.unsubscribe('tables-channel');
-      pusher.unsubscribe('kitchen-channel');
+      pusher.unsubscribe('waiter-channel');
       pusher.disconnect();
     };
   }, [fetchTables]);
@@ -92,6 +77,11 @@ export default function WaiterPage() {
   };
 
   const handleTableClick = async (table: Table) => {
+    // Si la comida está lista, al hacer clic quitamos la alerta visual
+    if (table.isFoodReady) {
+        setTables(prev => prev.map(t => t.id === table.id ? {...t, isFoodReady: false} : t));
+    }
+    
     try {
       if (table.status === 'AVAILABLE') {
         const res = await fetch('/api/orders', {
@@ -120,9 +110,27 @@ export default function WaiterPage() {
       if (!res.ok) throw new Error('No se encontró un pedido para cobrar');
       const activeOrder = await res.json();
       await fetch(`/api/orders/${activeOrder.id}/close`, { method: 'POST' });
+      // Después de cobrar, refrescamos el estado de las mesas
+      fetchTables(); 
     } catch (error) {
       console.error(error);
       alert('Error al cobrar el pedido.');
+    }
+  };
+
+  // Función para determinar el estilo y texto de la mesa
+  const getTableStyle = (table: Table) => {
+    if (table.isFoodReady) {
+      return 'bg-yellow-400 animate-pulse';
+    }
+    switch (table.status) {
+      case 'OCCUPIED':
+        return 'bg-orange-500';
+      case 'BILLING':
+        return 'bg-purple-600';
+      case 'AVAILABLE':
+      default:
+        return 'bg-green-500';
     }
   };
 
@@ -145,13 +153,10 @@ export default function WaiterPage() {
               <div key={table.id} className="flex flex-col gap-2">
                 <button 
                   onClick={() => handleTableClick(table)}
-                  className={`aspect-square rounded-lg flex flex-col justify-center items-center text-white transition-transform hover:scale-105 ${
-                    table.status === 'AVAILABLE' ? 'bg-green-500' : 
-                    table.status === 'OCCUPIED' ? 'bg-orange-500' : 'bg-purple-600'
-                  }`}
+                  className={`aspect-square rounded-lg flex flex-col justify-center items-center text-white transition-transform hover:scale-105 ${getTableStyle(table)}`}
                 >
                   <span className="text-xl font-bold">{table.name}</span>
-                  <span className="text-xs uppercase">{table.status}</span>
+                  <span className="text-xs uppercase">{table.isFoodReady ? 'COMIDA LISTA' : table.status}</span>
                 </button>
                 {table.status === 'BILLING' && (
                   <button 
