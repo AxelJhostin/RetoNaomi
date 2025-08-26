@@ -1,3 +1,4 @@
+//src/app/order/[id]/page.tsx
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -15,7 +16,13 @@ interface ModifierGroup {
   options: ModifierOption[];
 }
 interface Product { id: string; name: string; price: number;modifierGroups: ModifierGroup[]; }
-interface OrderItem { id: string; quantity: number; product: { id: string, name: string, price: number }; }
+interface OrderItem { 
+  id: string; 
+  quantity: number; 
+  price: number; // El precio base del producto
+  product: { id: string, name: string };
+  selectedModifiers?: { id: string, name: string, price: number }[]; // Los modificadores que se eligieron
+}
 interface Order { 
   id: string; 
   table: { id: string; name: string }; 
@@ -177,6 +184,11 @@ export default function OrderDetailPage() {
     }
   };
 
+  const calculateItemTotal = (item: OrderItem) => {
+    const modifiersPrice = item.selectedModifiers?.reduce((sum, mod) => sum + mod.price, 0) || 0;
+    return (item.price + modifiersPrice) * item.quantity;
+  };
+
   if (isLoading) return <p className="p-8">Cargando pedido...</p>;
   if (!order) return <p className="p-8">Pedido no encontrado.</p>;
 
@@ -210,21 +222,30 @@ export default function OrderDetailPage() {
           {order.items.length === 0 ? (<p>Este pedido está vacío.</p>) : (
             <ul>
               {order.items.map(item => (
-                <li key={item.id} className="flex justify-between items-center py-2 border-b">
-                  <div className="flex items-center gap-4">
-                    <button onClick={() => deleteOrderItem(item.id)} className="text-red-500 font-bold text-lg hover:text-red-700" disabled={order.status !== 'OPEN'}>&times;</button>
-                    <div>
-                      <p className="font-semibold">{item.product.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                <li key={item.id} className="flex justify-between items-start py-3 border-b last:border-none">
+                    <div className="flex items-start gap-4">
+                      <button onClick={() => deleteOrderItem(item.id)} className="text-red-500 font-bold text-lg hover:text-red-700 mt-1 disabled:opacity-50" disabled={order.status !== 'OPEN'}>&times;</button>
+                      <div>
+                        <p className="font-semibold">{item.product.name}</p>
+                        {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                          <ul className="text-xs text-gray-500 pl-3">
+                            {item.selectedModifiers.map((mod) => (
+                              <li key={mod.id}>+ {mod.name}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <p className="font-semibold font-mono">${calculateItemTotal(item).toFixed(2)}</p>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                         <span>Cant:</span>
-                        <button onClick={() => updateOrderItemQuantity(item.id, item.quantity - 1)} className="h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50" disabled={order.status !== 'OPEN'}>-</button>
+                        <button onClick={() => updateOrderItemQuantity(item.id, item.quantity - 1)} className="h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50" disabled={order.status !== 'OPEN' || item.quantity <= 1}>-</button>
                         <span>{item.quantity}</span>
                         <button onClick={() => updateOrderItemQuantity(item.id, item.quantity + 1)} className="h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50" disabled={order.status !== 'OPEN'}>+</button>
                       </div>
                     </div>
-                  </div>
-                  <p className="font-semibold">${(item.quantity * item.product.price).toFixed(2)}</p>
-                </li>
+                  </li>
               ))}
             </ul>
           )}
