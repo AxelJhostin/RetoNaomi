@@ -41,6 +41,7 @@ export default function OrderDetailPage() {
   // --- Estados para controlar el Modal ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId) return;
@@ -191,14 +192,28 @@ export default function OrderDetailPage() {
 
   if (isLoading) return <p className="p-8">Cargando pedido...</p>;
   if (!order) return <p className="p-8">Pedido no encontrado.</p>;
+  // --- Filtramos el menú según el término de búsqueda ---
+  const filteredMenu = menu.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
      <>
     <main className="grid grid-cols-1 md:grid-cols-2 h-screen">
       <section className="bg-gray-50 p-6 overflow-y-auto">
         <h1 className="text-2xl font-bold mb-4">Añadir a Pedido</h1>
+        {/* --- AÑADIMOS EL CAMPO DE BÚSQUEDA AQUÍ --- */}
+        <div className="mb-4">
+          <input 
+            type="text"
+            placeholder="Buscar producto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            {menu.map(product => (
+            {filteredMenu.map(product => (
               <button 
                 key={product.id}
                 // --- El cambio clave está aquí ---
