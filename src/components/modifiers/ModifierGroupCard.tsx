@@ -52,6 +52,21 @@ export default function ModifierGroupCard({ group, onUpdate }: ModifierGroupCard
     }
   };
 
+  const handleDeleteOption = async (optionId: string) => {
+    if (!confirm('¿Seguro que quieres eliminar esta opción?')) return;
+    
+    try {
+      const res = await fetch(`/api/modifier-groups/${group.id}/options/${optionId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('No se pudo eliminar la opción');
+      
+      onUpdate(); // Refrescamos para que la opción desaparezca
+    } catch (error) {
+      console.error('Error al eliminar opción:', error);
+    }
+  };
+
   return (
     <div className="border p-4 rounded-md bg-gray-50">
       <h3 className="font-bold text-lg text-gray-800">{group.name}</h3>
@@ -60,9 +75,20 @@ export default function ModifierGroupCard({ group, onUpdate }: ModifierGroupCard
       <ul className="mt-2 space-y-1">
         {group.options.length > 0 ? (
           group.options.map(option => (
-            <li key={option.id} className="flex justify-between items-center text-sm">
-              <span>{option.name}</span>
-              <span className="font-mono text-gray-600">+${option.price.toFixed(2)}</span>
+            <li key={option.id} className="flex justify-between items-center text-sm p-2 bg-white rounded-md">
+              <div>
+                <span>{option.name}</span>
+                <span className="font-mono text-gray-600 ml-2">+${option.price.toFixed(2)}</span>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleDeleteOption(option.id)}
+                  className="font-bold text-red-500 hover:text-red-700 text-lg"
+                  title="Eliminar Opción"
+                >
+                  &times;
+                </button>
+              </div>
             </li>
           ))
         ) : (
