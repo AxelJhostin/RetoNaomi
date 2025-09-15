@@ -86,6 +86,19 @@ export default function ProductDetailPage() {
     }
   };
 
+  const handleDeleteGroup = async (groupId: string) => {
+  if (!confirm('¿Seguro que quieres eliminar este grupo y todas sus opciones?')) return;
+
+  try {
+    const res = await fetch(`/api/modifier-groups/${groupId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('No se pudo eliminar el grupo');
+
+    fetchProductDetails(); // Refrescamos todo para que el grupo desaparezca
+  } catch (error) {
+    console.error('Error al eliminar el grupo:', error);
+  }
+};
+
   if (isLoading) return <p className="p-8 text-center">Cargando detalles del producto...</p>;
   if (error) return <p className="p-8 text-center text-red-500">Error: {error}</p>;
   if (!product) return <p className="p-8 text-center">Producto no encontrado.</p>;
@@ -110,7 +123,8 @@ export default function ProductDetailPage() {
                 <ModifierGroupCard 
                   key={group.id} 
                   group={group} 
-                  onUpdate={fetchProductDetails} 
+                  onUpdate={fetchProductDetails}
+                  onDeleteGroup={handleDeleteGroup} 
                 />
               ))
             ) : (

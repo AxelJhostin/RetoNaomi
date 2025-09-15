@@ -18,10 +18,11 @@ interface ModifierGroup {
 
 interface ModifierGroupCardProps {
   group: ModifierGroup;
-  onUpdate: () => void; // Función para refrescar los datos
+  onUpdate: () => void;
+  onDeleteGroup: (groupId: string) => void; // <-- AÑADE ESTA LÍNEA
 }
 
-export default function ModifierGroupCard({ group, onUpdate }: ModifierGroupCardProps) {
+export default function ModifierGroupCard({ group, onUpdate, onDeleteGroup }: ModifierGroupCardProps) {
   const [newOptionName, setNewOptionName] = useState('');
   const [newOptionPrice, setNewOptionPrice] = useState('');
 
@@ -69,8 +70,16 @@ export default function ModifierGroupCard({ group, onUpdate }: ModifierGroupCard
 
   return (
     <div className="border p-4 rounded-md bg-gray-50">
-      <h3 className="font-bold text-lg text-gray-800">{group.name}</h3>
-      
+      <div className="flex justify-between items-center border-b pb-2 mb-2">
+        <h3 className="font-bold text-lg text-gray-800">{group.name}</h3>
+        <button
+          onClick={() => onDeleteGroup(group.id)}
+          className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
+          title="Eliminar Grupo Completo"
+        >
+          Eliminar Grupo
+        </button>
+      </div>
       {/* Lista de opciones existentes */}
       <ul className="mt-2 space-y-1">
         {group.options.length > 0 ? (
