@@ -19,7 +19,7 @@ interface ModifierGroup {
 interface ModifierGroupCardProps {
   group: ModifierGroup;
   onUpdate: () => void;
-  onDeleteGroup: (groupId: string) => void; // <-- AÑADE ESTA LÍNEA
+  onDeleteGroup: (groupId: string) => void; 
 }
 
 export default function ModifierGroupCard({ group, onUpdate, onDeleteGroup }: ModifierGroupCardProps) {
@@ -28,6 +28,8 @@ export default function ModifierGroupCard({ group, onUpdate, onDeleteGroup }: Mo
   const [editingOptionId, setEditingOptionId] = useState<string | null>(null);
   const [editingOptionName, setEditingOptionName] = useState('');
   const [editingOptionPrice, setEditingOptionPrice] = useState('');
+  const [isEditingGroup, setIsEditingGroup] = useState(false);
+  const [editedGroupName, setEditedGroupName] = useState('');
 
   const handleAddOption = async (e: FormEvent) => {
     e.preventDefault();
@@ -97,17 +99,51 @@ export default function ModifierGroupCard({ group, onUpdate, onDeleteGroup }: Mo
     }
   };
 
+  const handleEditGroupClick = () => {
+    setIsEditingGroup(true);
+    setEditedGroupName(group.name);
+  };
+
+  const handleCancelEditGroup = () => {
+    setIsEditingGroup(false);
+  };
+
+  const handleSaveGroup = async () => {
+    try {
+      const res = await fetch(`/api/modifier-groups/${group.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editedGroupName }),
+      });
+      if (!res.ok) throw new Error('No se pudo actualizar el grupo');
+      
+      setIsEditingGroup(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error al guardar el grupo:', error);
+    }
+  };
+
   return (
     <div className="border p-4 rounded-md bg-gray-50">
       <div className="flex justify-between items-center border-b pb-2 mb-2">
-        <h3 className="font-bold text-lg text-gray-800">{group.name}</h3>
-        <button
-          onClick={() => onDeleteGroup(group.id)}
-          className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
-          title="Eliminar Grupo Completo"
-        >
-          Eliminar Grupo
-        </button>
+        {isEditingGroup ? (
+          // --- VISTA DE EDICIÓN DEL GRUPO ---
+          <div className="flex-grow flex gap-2 items-center">
+            <input type="text" value={editedGroupName} onChange={(e) => setEditedGroupName(e.target.value)} className="flex-grow rounded-md border-gray-300 p-1 font-bold text-lg" autoFocus />
+            <button onClick={handleSaveGroup} className="text-green-600 font-bold">Guardar</button>
+            <button onClick={handleCancelEditGroup} className="text-gray-500">Cancelar</button>
+          </div>
+        ) : (
+          // --- VISTA NORMAL DEL GRUPO ---
+          <>
+            <h3 className="font-bold text-lg text-gray-800">{group.name}</h3>
+            <div className="flex gap-2">
+              <button onClick={handleEditGroupClick} className="text-blue-600 hover:text-blue-800 text-xs font-semibold">EDITAR GRUPO</button>
+              <button onClick={() => onDeleteGroup(group.id)} className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700">Eliminar Grupo</button>
+            </div>
+          </>
+        )}
       </div>
       
       <ul className="mt-2 space-y-2">

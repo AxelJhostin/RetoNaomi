@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { groupId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const groupId = params.groupId;
+    const groupId = params.id;
     const body = await request.json();
     const { name, price } = body;
 

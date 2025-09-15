@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { optionId: string } }
+  { params }: { params: { id: string, optionId: string } }
 ) {
   try {
     const optionId = params.optionId;
@@ -24,7 +24,7 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { optionId: string } }
+  { params }: { params: { id: string, optionId: string } }
 ) {
   try {
     const optionId = params.optionId;
