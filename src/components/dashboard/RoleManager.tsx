@@ -13,6 +13,8 @@ export default function RoleManager() {
   const [newRoleName, setNewRoleName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [editingRoleName, setEditingRoleName] = useState('');
 
   // Función para obtener la lista de roles
   const fetchRoles = async () => {
@@ -89,6 +91,39 @@ export default function RoleManager() {
     }
   };
 
+  const handleEditClick = (role: Role) => {
+    setEditingRoleId(role.id);
+    setEditingRoleName(role.name);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoleId(null);
+    setEditingRoleName('');
+  };
+
+  const handleSaveEdit = async (roleId: string) => {
+    setError(null);
+    try {
+      const res = await fetch(`/api/roles/${roleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editingRoleName }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Error al actualizar el rol');
+      }
+
+      handleCancelEdit(); // Salimos del modo edición
+      fetchRoles();     // Refrescamos la lista
+    } catch (err) {
+      if (err instanceof Error) setError(err.message);
+      else setError('Ocurrió un error inesperado');
+    }
+  };
+
+
   return (
     <div className="rounded-lg bg-white p-6 shadow-md">
       <h2 className="mb-4 text-xl font-semibold">Gestionar Roles</h2>
@@ -111,7 +146,7 @@ export default function RoleManager() {
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       {/* Lista de roles existentes */}
-      <div className="space-y-2">
+       <div className="space-y-2">
         <h3 className="text-lg font-medium">Roles Actuales</h3>
         {isLoading ? (
           <p>Cargando roles...</p>
@@ -119,13 +154,29 @@ export default function RoleManager() {
           <ul>
             {roles.map(role => (
               <li key={role.id} className="flex items-center justify-between border-b py-2 last:border-none">
-                <span className="text-gray-800">{role.name}</span>
-                <button
-                  onClick={() => handleDeleteRole(role.id)}
-                  className="rounded-md bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600"
-                >
-                  Eliminar
-                </button>
+                {editingRoleId === role.id ? (
+                  // --- VISTA DE EDICIÓN ---
+                  <div className="flex-grow flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={editingRoleName}
+                      onChange={(e) => setEditingRoleName(e.target.value)}
+                      className="flex-grow rounded-md border border-gray-300 p-1"
+                      autoFocus
+                    />
+                    <button onClick={() => handleSaveEdit(role.id)} className="rounded-md bg-green-500 px-3 py-1 text-sm text-white hover:bg-green-600">Guardar</button>
+                    <button onClick={handleCancelEdit} className="rounded-md bg-gray-500 px-3 py-1 text-sm text-white hover:bg-gray-600">Cancelar</button>
+                  </div>
+                ) : (
+                  // --- VISTA NORMAL ---
+                  <>
+                    <span className="text-gray-800">{role.name}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleEditClick(role)} className="rounded-md bg-yellow-500 px-3 py-1 text-sm text-white hover:bg-yellow-600">Editar</button>
+                      <button onClick={() => handleDeleteRole(role.id)} className="rounded-md bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600">Eliminar</button>
+                    </div>
+                  </>
+                )}
               </li>
             ))}
           </ul>

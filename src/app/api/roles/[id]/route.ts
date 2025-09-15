@@ -38,3 +38,28 @@ export async function DELETE(
     return NextResponse.json({ message: 'Ocurrió un error en el servidor' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const roleId = params.id;
+    const body = await request.json();
+    const { name } = body;
+
+    if (!name) {
+      return NextResponse.json({ message: 'El nombre es requerido' }, { status: 400 });
+    }
+
+    const updatedRole = await prisma.role.update({
+      where: { id: roleId },
+      data: { name },
+    });
+
+    return NextResponse.json(updatedRole, { status: 200 });
+  } catch (error) {
+    console.error('Error al actualizar el rol:', error);
+    return NextResponse.json({ message: 'Ocurrió un error en el servidor' }, { status: 500 });
+  }
+}
