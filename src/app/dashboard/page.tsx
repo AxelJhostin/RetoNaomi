@@ -4,6 +4,7 @@
 import ProductManager from '@/components/dashboard/ProductManager';
 import StaffManager from '@/components/dashboard/StaffManager';
 import TableManager from '@/components/dashboard/TableManager';
+import RoleManager  from '@/components/dashboard/RoleManager';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -51,6 +52,7 @@ export default function DashboardPage() {
 
         {/* --- Columna Derecha --- */}
         <div className="flex flex-col gap-8">
+          <RoleManager />
           <StaffManager />
           <TableManager />
         </div>
