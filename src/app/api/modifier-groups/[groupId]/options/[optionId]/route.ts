@@ -21,3 +21,31 @@ export async function DELETE(
     return NextResponse.json({ message: 'Ocurrió un error en el servidor' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { optionId: string } }
+) {
+  try {
+    const optionId = params.optionId;
+    const body = await request.json();
+    const { name, price } = body;
+
+    if (!name || price === undefined) {
+      return NextResponse.json({ message: 'El nombre y el precio son requeridos' }, { status: 400 });
+    }
+
+    const updatedOption = await prisma.modifierOption.update({
+      where: { id: optionId },
+      data: { 
+        name,
+        price: parseFloat(price)
+      },
+    });
+
+    return NextResponse.json(updatedOption, { status: 200 });
+  } catch (error) {
+    console.error('Error al actualizar la opción:', error);
+    return NextResponse.json({ message: 'Ocurrió un error en el servidor' }, { status: 500 });
+  }
+}

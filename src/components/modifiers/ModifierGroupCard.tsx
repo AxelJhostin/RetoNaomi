@@ -25,6 +25,9 @@ interface ModifierGroupCardProps {
 export default function ModifierGroupCard({ group, onUpdate, onDeleteGroup }: ModifierGroupCardProps) {
   const [newOptionName, setNewOptionName] = useState('');
   const [newOptionPrice, setNewOptionPrice] = useState('');
+  const [editingOptionId, setEditingOptionId] = useState<string | null>(null);
+  const [editingOptionName, setEditingOptionName] = useState('');
+  const [editingOptionPrice, setEditingOptionPrice] = useState('');
 
   const handleAddOption = async (e: FormEvent) => {
     e.preventDefault();
@@ -68,6 +71,32 @@ export default function ModifierGroupCard({ group, onUpdate, onDeleteGroup }: Mo
     }
   };
 
+  const handleEditOptionClick = (option: ModifierOption) => {
+    setEditingOptionId(option.id);
+    setEditingOptionName(option.name);
+    setEditingOptionPrice(option.price.toString());
+  };
+
+  const handleCancelEditOption = () => {
+    setEditingOptionId(null);
+  };
+
+  const handleSaveOption = async (optionId: string) => {
+    try {
+      const res = await fetch(`/api/modifier-groups/${group.id}/options/${optionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editingOptionName, price: editingOptionPrice }),
+      });
+      if (!res.ok) throw new Error('No se pudo actualizar la opción');
+      
+      setEditingOptionId(null);
+      onUpdate();
+    } catch (error) {
+      console.error('Error al guardar la opción:', error);
+    }
+  };
+
   return (
     <div className="border p-4 rounded-md bg-gray-50">
       <div className="flex justify-between items-center border-b pb-2 mb-2">
@@ -80,24 +109,50 @@ export default function ModifierGroupCard({ group, onUpdate, onDeleteGroup }: Mo
           Eliminar Grupo
         </button>
       </div>
-      {/* Lista de opciones existentes */}
-      <ul className="mt-2 space-y-1">
+      
+      <ul className="mt-2 space-y-2">
+        {/* Mostramos la lista de opciones existentes */}
         {group.options.length > 0 ? (
           group.options.map(option => (
-            <li key={option.id} className="flex justify-between items-center text-sm p-2 bg-white rounded-md">
-              <div>
-                <span>{option.name}</span>
-                <span className="font-mono text-gray-600 ml-2">+${option.price.toFixed(2)}</span>
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleDeleteOption(option.id)}
-                  className="font-bold text-red-500 hover:text-red-700 text-lg"
-                  title="Eliminar Opción"
-                >
-                  &times;
-                </button>
-              </div>
+            <li key={option.id} className="flex justify-between items-center text-sm p-2 bg-white rounded-md shadow-sm min-h-[50px]">
+              {editingOptionId === option.id ? (
+                // --- VISTA DE EDICIÓN DE LA OPCIÓN ---
+                <div className="flex-grow flex gap-2 items-center">
+                  <input 
+                    type="text" 
+                    value={editingOptionName} 
+                    onChange={(e) => setEditingOptionName(e.target.value)} 
+                    className="flex-grow rounded-md border-gray-300 p-1 text-sm" 
+                  />
+                  <input 
+                    type="number" 
+                    value={editingOptionPrice} 
+                    onChange={(e) => setEditingOptionPrice(e.target.value)} 
+                    className="w-20 rounded-md border-gray-300 p-1 text-sm" 
+                    step="0.01" 
+                  />
+                  <button onClick={() => handleSaveOption(option.id)} className="text-green-600 font-bold hover:text-green-800">Guardar</button>
+                  <button onClick={handleCancelEditOption} className="text-gray-500 hover:text-gray-700">Cancelar</button>
+                </div>
+              ) : (
+                // --- VISTA NORMAL DE LA OPCIÓN ---
+                <>
+                  <div>
+                    <span>{option.name}</span>
+                    <span className="font-mono text-gray-600 ml-2">+${option.price.toFixed(2)}</span>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <button onClick={() => handleEditOptionClick(option)} className="text-blue-600 hover:text-blue-800 text-xs font-semibold">EDITAR</button>
+                    <button 
+                      onClick={() => handleDeleteOption(option.id)} 
+                      className="font-bold text-red-500 hover:text-red-700 text-lg leading-none" 
+                      title="Eliminar Opción"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </>
+              )}
             </li>
           ))
         ) : (
