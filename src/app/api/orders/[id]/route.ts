@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const orderId = params.id;
+    const { id: orderId } = params;
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -37,7 +37,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const orderId = params.id;
+    const { id: orderId } = params;
     const { status } = await request.json();
 
     if (!status) {
@@ -82,5 +82,45 @@ export async function PUT(
   } catch (error) {
     console.error('Error al actualizar el pedido:', error);
     return NextResponse.json({ message: 'Error al actualizar el pedido' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const orderId = params.id;
+
+    // Buscamos la orden para saber qué mesa está asociada a ella
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { tableId: true }, // Solo necesitamos el ID de la mesa
+    });
+
+    if (!order) {
+      // Si la orden no existe, no hay nada que hacer
+      return new NextResponse(null, { status: 204 });
+    }
+
+    // Usamos una transacción para asegurar que ambas operaciones se completen
+    await prisma.$transaction([
+      // 1. Borramos el pedido
+      prisma.order.delete({
+        where: { id: orderId },
+      }),
+      // 2. Actualizamos el estado de la mesa a 'AVAILABLE'
+      prisma.table.update({
+        where: { id: order.tableId },
+        data: { status: 'AVAILABLE' },
+      }),
+    ]);
+    
+    // Aquí podríamos notificar a los meseros por Pusher que la mesa se liberó
+
+    return new NextResponse(null, { status: 204 }); // Éxito
+  } catch (error) {
+    console.error("Error al eliminar la orden:", error);
+    return NextResponse.json({ error: 'Error al eliminar la orden' }, { status: 500 });
   }
 }

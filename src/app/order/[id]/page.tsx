@@ -69,6 +69,14 @@ export default function OrderDetailPage() {
     fetchOrderDetails();
   }, [fetchOrderDetails]);
 
+  // --- 1. NUEVA FUNCIÓN DE "REGRESO INTELIGENTE" ---
+  const handleGoBack = async () => {
+    if (order && order.items.length === 0) {
+      await fetch(`/api/orders/${order.id}`, { method: 'DELETE' });
+    }
+    router.push('/waiter');
+  };
+
   // --- Lógica para manejar el clic en un producto ---
   const handleProductClick = (product: Product) => {
     // Si el producto TIENE modificadores, abrimos el modal
@@ -231,7 +239,7 @@ export default function OrderDetailPage() {
       <section className="p-6 bg-white flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Pedido: <span className="text-blue-600">{order.table.name}</span></h1>
-          <button onClick={() => router.push('/waiter')} className="text-sm text-blue-600">Volver a Mesas</button>
+          <button onClick={handleGoBack} className="text-sm text-blue-600 hover:underline">Volver a Mesas</button>
         </div>
         <div className="flex-grow border-t pt-4 overflow-y-auto">
           {order.items.length === 0 ? (<p>Este pedido está vacío.</p>) : (
