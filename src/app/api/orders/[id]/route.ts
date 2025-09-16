@@ -90,7 +90,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const orderId = params.id;
+    const { id: orderId } = params;
 
     // Buscamos la orden para saber qué mesa está asociada a ella
     const order = await prisma.order.findUnique({

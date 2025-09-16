@@ -47,7 +47,8 @@ model Product {
   name        String
   description String?
   price       Float
-  category    String?
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -152,4 +153,14 @@ model ModifierOption {
   // Relación: Una opción pertenece a un grupo de modificadores
   groupId   String
   group     ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+// MODELO PARA LAS CATEGORÍAS DE PRODUCTOS
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+
+  // Relación: Una categoría puede tener muchos productos
+  products  Product[]
 }
