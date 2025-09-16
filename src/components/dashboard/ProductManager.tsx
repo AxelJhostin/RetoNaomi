@@ -1,3 +1,4 @@
+// src/components/dashboard/ProductManager.tsx
 'use client';
 import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,7 +9,12 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
-  category: string | null;
+  category: Category | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 export default function ProductManager() {
@@ -19,6 +25,8 @@ export default function ProductManager() {
   const [newPrice, setNewPrice] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newCategory, setNewCategory] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [newCategoryId, setNewCategoryId] = useState('');
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -37,16 +45,53 @@ export default function ProductManager() {
     fetchProducts();
   }, []);
 
+  // Función para obtener todos los datos necesarios
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Pedimos productos y categorías al mismo tiempo
+      const [productsRes, categoriesRes] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/categories')
+      ]);
+      const productsData = await productsRes.json();
+      const categoriesData = await categoriesRes.json();
+      
+      setProducts(productsData);
+      setCategories(categoriesData);
+      // Opcional: poner la primera categoría como seleccionada por defecto
+      if (categoriesData.length > 0) {
+        setNewCategoryId(categoriesData[0].id);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const handleAddProduct = async (e: FormEvent) => {
     e.preventDefault();
     try {
       await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, price: parseFloat(newPrice), description: newDescription, category: newCategory }),
+        body: JSON.stringify({ 
+          name: newName, 
+          price: parseFloat(newPrice), 
+          description: newDescription, 
+          categoryId: newCategoryId // <-- Enviamos el ID de la categoría
+        }),
       });
-      setNewName(''); setNewPrice(''); setNewDescription(''); setNewCategory('');
-      fetchProducts();
+      // Limpiamos el formulario
+      setNewName(''); 
+      setNewPrice(''); 
+      setNewDescription('');
+      fetchData(); // Recargamos todo
     } catch (error) {
       console.error(error);
     }
@@ -57,11 +102,12 @@ export default function ProductManager() {
     router.push(`/dashboard/products/${product.id}`);
   };
 
+  // Función para ELIMINAR un producto
   const handleDelete = async (productId: string) => {
     if (!confirm('¿Seguro que quieres eliminar este producto?')) return;
     try {
       await fetch(`/api/products/${productId}`, { method: 'DELETE' });
-      fetchProducts();
+      fetchData();
     } catch (error) {
       console.error(error);
     }
@@ -77,7 +123,23 @@ export default function ProductManager() {
             <input type="text" placeholder="Nombre del producto" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required />
             <input type="number" placeholder="Precio (ej: 8.50)" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" step="0.01" required />
           </div>
-          <input type="text" placeholder="Categoría (ej: Bebidas)" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" />
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+            <select
+              id="category"
+              value={newCategoryId}
+              onChange={(e) => setNewCategoryId(e.target.value)}
+              className="w-full rounded-md border border-gray-300 p-2"
+              required
+            >
+              <option value="" disabled>Selecciona una categoría</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <textarea placeholder="Descripción del producto" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" rows={3}></textarea>
           <button type="submit" className="rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700">Añadir Producto</button>
         </form>
@@ -107,6 +169,5 @@ export default function ProductManager() {
         ) : (<p>No hay productos para mostrar.</p>)}
       </div>
     </section>
-    // --- EL MODAL YA NO ESTÁ AQUÍ ---
   );
 }

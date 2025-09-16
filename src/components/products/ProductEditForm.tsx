@@ -3,13 +3,14 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 
-// --- SECCIÓN CORREGIDA ---
+// --- Interfaces ---
+interface Category { id: string; name: string; }
+
 interface ModifierOption {
   id: string;
   name: string;
   price: number;
 }
-
 interface ModifierGroup {
   id: string;
   name: string;
@@ -21,37 +22,37 @@ interface ProductWithDetails {
   name: string;
   description: string | null;
   price: number;
-  category: string | null;
+  categoryId: string | null;
+  category: Category | null;
   modifierGroups: ModifierGroup[];
 }
-// -------------------------
-
 interface ProductEditFormProps {
   product: ProductWithDetails;
-  onProductUpdate: () => void; // Función para refrescar los datos
+  categories: Category[];
+  onProductUpdate: () => void;
 }
 
-export default function ProductEditForm({ product, onProductUpdate }: ProductEditFormProps) {
+export default function ProductEditForm({ product, categories, onProductUpdate }: ProductEditFormProps) {
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description || '');
   const [price, setPrice] = useState(product.price.toString());
-  const [category, setCategory] = useState(product.category || '');
+  // --- CAMBIO 1: Renombramos el estado a 'categoryId' ---
+  const [categoryId, setCategoryId] = useState(product.categoryId || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Sincroniza el estado si el producto que llega como prop cambia
   useEffect(() => {
     setName(product.name);
     setDescription(product.description || '');
     setPrice(product.price.toString());
-    setCategory(product.category || '');
+    // --- CAMBIO 2: Sincronizamos 'categoryId' ---
+    setCategoryId(product.categoryId || '');
   }, [product]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage('');
-
     try {
       const res = await fetch(`/api/products/${product.id}`, {
         method: 'PUT',
@@ -60,17 +61,14 @@ export default function ProductEditForm({ product, onProductUpdate }: ProductEdi
           name,
           description,
           price: parseFloat(price),
-          category,
+          // --- CAMBIO 3: Enviamos 'categoryId' a la API ---
+          categoryId,
         }),
       });
-
-      if (!res.ok) {
-        throw new Error('No se pudo actualizar el producto');
-      }
+      if (!res.ok) throw new Error('No se pudo actualizar el producto');
 
       setMessage('¡Producto actualizado con éxito!');
-      onProductUpdate(); 
-
+      onProductUpdate();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error(error);
@@ -96,7 +94,13 @@ export default function ProductEditForm({ product, onProductUpdate }: ProductEdi
         </div>
         <div>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700">Categoría</label>
-          <input type="text" id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+          {/* --- CAMBIO 4: Conectamos el select a 'categoryId' y 'setCategoryId' --- */}
+          <select id="category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <option value="">Sin Categoría</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-700">Descripción</label>

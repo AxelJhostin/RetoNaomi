@@ -8,6 +8,11 @@ import ModifierGroupCard from '@/components/modifiers/ModifierGroupCard';
 import ProductEditForm from '@/components/products/ProductEditForm';
 
 // Definimos una interfaz más completa para el producto
+interface Category { 
+  id: string; 
+  name: string; 
+}
+
 interface ModifierOption {
   id: string;
   name: string;
@@ -25,12 +30,14 @@ interface ProductWithDetails {
   name: string;
   description: string | null;
   price: number;
-  category: string | null;
+  category: Category | null;
+  categoryId: string | null;
   modifierGroups: ModifierGroup[];
 }
 
 export default function ProductDetailPage() {
   const [product, setProduct] = useState<ProductWithDetails | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newGroupName, setNewGroupName] = useState('');
@@ -60,6 +67,36 @@ export default function ProductDetailPage() {
   useEffect(() => {
     fetchProductDetails();
   }, [fetchProductDetails]);
+
+  const fetchPageData = useCallback(async () => {
+    if (!productId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Pedimos los detalles del producto Y la lista de categorías a la vez
+      const [productRes, categoriesRes] = await Promise.all([
+        fetch(`/api/products/${productId}`),
+        fetch('/api/categories')
+      ]);
+
+      if (!productRes.ok) throw new Error('Producto no encontrado');
+      if (!categoriesRes.ok) throw new Error('No se pudieron cargar las categorías');
+
+      const productData = await productRes.json();
+      const categoriesData = await categoriesRes.json();
+      
+      setProduct(productData);
+      setCategories(categoriesData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ocurrió un error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    fetchPageData();
+  }, [fetchPageData]);
 
   const handleAddGroup = async (e: FormEvent) => {
     e.preventDefault();
@@ -111,8 +148,11 @@ export default function ProductDetailPage() {
         </Link>
         
         {/* FORMULARIO PARA EDITAR EL PRODUCTO */}
-        <ProductEditForm product={product} onProductUpdate={fetchProductDetails} />
-
+         <ProductEditForm 
+          product={product} 
+          categories={categories} // <-- NUEVA PROP
+          onProductUpdate={fetchPageData} 
+        />
         {/* TARJETA PARA GESTIONAR MODIFICADORES */}
         <div className="rounded-lg bg-white p-6 shadow-md">
           <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Grupos de Modificadores</h2>
