@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
         name: 'asc',
       },
       include: {
+        category: true,
         modifierGroups: {
           include: {
             options: {
