@@ -9,9 +9,11 @@ export async function GET(
   { params }: { params: { productId: string } }
 ) {
   try {
+    const { productId } = params; // <-- CAMBIO CLAVE AQUÍ
     const product = await prisma.product.findUnique({
-      where: { id: params.productId },
+      where: { id: productId },
       include: {
+        category: true, // Asegurémonos de incluir la categoría
         modifierGroups: {
           orderBy: { createdAt: 'asc' },
           include: {
@@ -49,11 +51,11 @@ export async function PUT(
     const userId = payload.id as string;
     
     const body = await request.json();
-    const { name, description, price, category } = body;
+    const { name, description, price, categoryId } = body;
 
     const updatedProduct = await prisma.product.updateMany({
       where: { id: params.productId, ownerId: userId },
-      data: { name, description, price: parseFloat(price), category },
+      data: { name, description, price: parseFloat(price), categoryId },
     });
 
     if (updatedProduct.count === 0) {
