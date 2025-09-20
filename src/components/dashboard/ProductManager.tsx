@@ -1,173 +1,87 @@
 // src/components/dashboard/ProductManager.tsx
 'use client';
 import { useState, useEffect, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  category: Category | null;
-}
 
 interface Category {
   id: string;
   name: string;
 }
 
-export default function ProductManager() {
-  const router = useRouter(); // <-- Movido aquí adentro
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+// --- AÑADIMOS LA INTERFAZ PARA LAS PROPS ---
+interface ProductManagerProps {
+  onProductAdded: () => void;
+}
+
+// --- ACTUALIZAMOS LA FIRMA DE LA FUNCIÓN ---
+export default function ProductManager({ onProductAdded }: ProductManagerProps) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [newCategory, setNewCategory] = useState('');
-  const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryId, setNewCategoryId] = useState('');
 
-  const fetchProducts = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/products');
-      const data = await res.json();
-      setProducts(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // Función para obtener todos los datos necesarios
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      // Pedimos productos y categorías al mismo tiempo
-      const [productsRes, categoriesRes] = await Promise.all([
-        fetch('/api/products'),
-        fetch('/api/categories')
-      ]);
-      const productsData = await productsRes.json();
-      const categoriesData = await categoriesRes.json();
-      
-      setProducts(productsData);
-      setCategories(categoriesData);
-      // Opcional: poner la primera categoría como seleccionada por defecto
-      if (categoriesData.length > 0) {
-        setNewCategoryId(categoriesData[0].id);
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        setCategories(data);
+        if (data.length > 0) {
+          setNewCategoryId(data[0].id);
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
+    };
+    fetchCategories();
   }, []);
 
   const handleAddProduct = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await fetch('/api/products', {
+      const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           name: newName, 
           price: parseFloat(newPrice), 
           description: newDescription, 
-          categoryId: newCategoryId // <-- Enviamos el ID de la categoría
+          categoryId: newCategoryId,
         }),
       });
-      // Limpiamos el formulario
+
+      if (!res.ok) throw new Error('No se pudo crear el producto');
+
       setNewName(''); 
       setNewPrice(''); 
       setNewDescription('');
-      fetchData(); // Recargamos todo
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  // --- FUNCIÓN DE EDITAR ACTUALIZADA ---
-  const handleEditClick = (product: Product) => {
-    router.push(`/dashboard/products/${product.id}`);
-  };
-
-  // Función para ELIMINAR un producto
-  const handleDelete = async (productId: string) => {
-    if (!confirm('¿Seguro que quieres eliminar este producto?')) return;
-    try {
-      await fetch(`/api/products/${productId}`, { method: 'DELETE' });
-      fetchData();
+      onProductAdded(); // Ahora esta línea es válida
     } catch (error) {
       console.error(error);
     }
   };
 
   return (
-    <section className="flex flex-col gap-8">
-      <h1 className="text-3xl font-bold text-gray-900">Gestión de Productos</h1>
-      <div className="rounded-lg bg-white p-6 shadow-md">
-        <h2 className="mb-4 text-xl font-semibold">Añadir Nuevo Producto</h2>
-        <form onSubmit={handleAddProduct} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <input type="text" placeholder="Nombre del producto" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required />
-            <input type="number" placeholder="Precio (ej: 8.50)" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" step="0.01" required />
-          </div>
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-            <select
-              id="category"
-              value={newCategoryId}
-              onChange={(e) => setNewCategoryId(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2"
-              required
-            >
-              <option value="" disabled>Selecciona una categoría</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <textarea placeholder="Descripción del producto" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" rows={3}></textarea>
-          <button type="submit" className="rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700">Añadir Producto</button>
-        </form>
-      </div>
-      <div className="rounded-lg bg-white p-6 shadow-md">
-        <h2 className="mb-4 text-xl font-semibold">Mi Menú</h2>
-        {isLoading ? (<p>Cargando...</p>) : products.length > 0 ? (
-          <ul>
-            {products.map((product) => (
-              <li key={product.id} className="flex flex-col items-start justify-between border-b py-4 last:border-none sm:flex-row sm:items-center">
-                <div className="mb-2 sm:mb-0">
-                  <p className="font-semibold text-gray-800">{product.name}</p>
-                  <p className="text-sm text-gray-500">{product.description}</p>
-                </div>
-                <div className="flex w-full items-center justify-between sm:w-auto sm:justify-end shrink-0">
-                  <p className="font-mono text-lg font-semibold text-blue-600">${product.price.toFixed(2)}</p>
-                  <Link href={`/dashboard/products/${product.id}`}>
-                    <button className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
-                      Editar
-                    </button>
-                  </Link>
-                  <button onClick={() => handleDelete(product.id)} className="ml-2 rounded-md bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600">Eliminar</button>
-                </div>
-              </li>
+    <div className="rounded-lg bg-white p-6 shadow-md">
+      <h2 className="mb-4 text-xl font-semibold">Añadir Nuevo Producto</h2>
+      <form onSubmit={handleAddProduct} className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <input type="text" placeholder="Nombre del producto" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required />
+          <input type="number" placeholder="Precio (ej: 8.50)" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" step="0.01" required />
+        </div>
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+          <select id="category" value={newCategoryId} onChange={(e) => setNewCategoryId(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" required>
+            <option value="" disabled>Selecciona una categoría</option>
+            {categories.map(category => (
+              <option key={category.id} value={category.id}>{category.name}</option>
             ))}
-          </ul>
-        ) : (<p>No hay productos para mostrar.</p>)}
-      </div>
-    </section>
+          </select>
+        </div>
+        <textarea placeholder="Descripción del producto" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" rows={3}></textarea>
+        <button type="submit" className="rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700">Añadir Producto</button>
+      </form>
+    </div>
   );
 }
