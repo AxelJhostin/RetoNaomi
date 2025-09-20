@@ -53,8 +53,9 @@ export async function PUT(
     const body = await request.json();
     const { name, description, price, categoryId } = body;
 
+    const { productId } = params;
     const updatedProduct = await prisma.product.updateMany({
-      where: { id: params.productId, ownerId: userId },
+      where: { id: productId, ownerId: userId }, 
       data: { name, description, price: parseFloat(price), categoryId },
     });
 
