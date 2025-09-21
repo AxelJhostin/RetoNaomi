@@ -2,10 +2,12 @@
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+// Está función maneja la solicitud GET para obtener el pedido activo de una mesa específica
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  // Extraer el ID de la mesa de los parámetros de la ruta
   try {
     const { id: tableId } = params;
     const activeOrder = await prisma.order.findFirst({

@@ -9,9 +9,21 @@ import TableManager from '@/components/dashboard/TableManager';
 import RoleManager  from '@/components/dashboard/RoleManager';
 import CategoryManager from '@/components/dashboard/CategoryManager';
 import ProductList from '@/components/dashboard/ProductList';
+import SalesChart from '@/components/reports/SalesChart';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+interface ReportData {
+  salesByDay: { date: string; total: number }[];
+}
+interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: { name: string } | null;
+}
 
 // --- Mantenemos la interfaz aquí, en el "gerente" ---
 interface Product {
@@ -28,6 +40,7 @@ export default function DashboardPage() {
   // --- NUEVO: El estado de los productos ahora vive aquí ---
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
 
   // --- NUEVO: La función para buscar productos ahora vive aquí ---
   const fetchProducts = useCallback(async () => {
@@ -42,10 +55,29 @@ export default function DashboardPage() {
       setIsLoadingProducts(false);
     }
   }, []); // useCallback con array vacío para que la función no se recree
+  // --- NUEVO: La función para buscar datos del reporte ahora vive aquí ---
+   const fetchChartData = useCallback(async () => {
+    // Calculamos el rango de fechas: desde hace 7 días hasta hoy
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 6);
+
+    // Formateamos las fechas a YYYY-MM-DD
+    const format = (d: Date) => d.toISOString().split('T')[0];
+
+    try {
+      const res = await fetch(`/api/reports/sales-summary?startDate=${format(startDate)}&endDate=${format(endDate)}`);
+      const data = await res.json();
+      setReportData(data);
+    } catch (error) {
+      console.error("Error fetching report data:", error);
+    }
+  }, []);
 
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchChartData
+  }, [fetchProducts, fetchChartData]);
 
   // --- NUEVO: La función para borrar productos ahora vive aquí ---
   const handleDeleteProduct = async (productId: string) => {
@@ -80,7 +112,8 @@ export default function DashboardPage() {
             Cerrar Sesión
           </button>
         </div>
-        {/* ------------------------------------------- */}
+
+         
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
           {/* Columna Izquierda */}
@@ -91,6 +124,13 @@ export default function DashboardPage() {
               isLoading={isLoadingProducts}
               onDelete={handleDeleteProduct}
             />
+            <div className="mb-8">
+          {reportData && reportData.salesByDay && (
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <SalesChart data={reportData.salesByDay} />
+            </div>
+          )}
+        </div>
           </div>
 
           {/* Columna Derecha */}
