@@ -63,29 +63,43 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-7xl mb-8 text-right">
-        {/* ... tus botones de reporte y logout se quedan igual ... */}
-      </div>
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 lg:grid-cols-2">
+    <main className="min-h-screen bg-gray-50 p-4 sm:p-8">
+      <div className="mx-auto max-w-7xl">
         
-        {/* --- Columna Izquierda --- */}
-        <div className="flex flex-col gap-8">
-          {/* --- CAMBIO: Pasamos las props a los componentes hijos --- */}
-          <ProductManager onProductAdded={fetchProducts} />
-          <ProductList 
-            products={products}
-            isLoading={isLoadingProducts}
-            onDelete={handleDeleteProduct}
-          />
+        {/* --- ESTA ES LA SECCIÓN COMPLETA DE BOTONES --- */}
+        <div className="flex justify-end gap-4 mb-8">
+          <Link href="/dashboard/reports">
+            <button className="rounded-md bg-green-600 px-4 py-2 text-white font-semibold hover:bg-green-700">
+              Ver Reporte de Ventas
+            </button>
+          </Link>
+          <button 
+            onClick={handleLogout}
+            className="rounded-md bg-red-600 px-4 py-2 text-white font-semibold hover:bg-red-700"
+          >
+            Cerrar Sesión
+          </button>
         </div>
+        {/* ------------------------------------------- */}
 
-        {/* --- Columna Derecha --- */}
-        <div className="flex flex-col gap-8">
-          <CategoryManager />
-          <RoleManager />
-          <StaffManager />
-          <TableManager />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+          {/* Columna Izquierda */}
+          <div className="flex flex-col gap-8">
+            <ProductManager onProductAdded={fetchProducts} />
+            <ProductList 
+              products={products}
+              isLoading={isLoadingProducts}
+              onDelete={handleDeleteProduct}
+            />
+          </div>
+
+          {/* Columna Derecha */}
+          <div className="flex flex-col gap-8">
+            <CategoryManager />
+            <RoleManager />
+            <StaffManager />
+            <TableManager />
+          </div>
         </div>
       </div>
     </main>
