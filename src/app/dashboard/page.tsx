@@ -10,21 +10,32 @@ import RoleManager  from '@/components/dashboard/RoleManager';
 import CategoryManager from '@/components/dashboard/CategoryManager';
 import ProductList from '@/components/dashboard/ProductList';
 import SalesChart from '@/components/reports/SalesChart';
+import AIAdvisor from '@/components/dashboard/AIAdvisor';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+interface Kpis {
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+}
+interface TopProduct {
+  name: string;
+  count: number;
+  revenue: number;
+}
+interface TopModifier {
+  name: string;
+  count: number;
+  revenue: number;
+}
 interface ReportData {
+  kpis: Kpis;
+  topProducts: TopProduct[];
+  topModifiers: TopModifier[];
   salesByDay: { date: string; total: number }[];
 }
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  category: { name: string } | null;
-}
-
 // --- Mantenemos la interfaz aquí, en el "gerente" ---
 interface Product {
   id: string;
@@ -76,7 +87,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchProducts();
-    fetchChartData
+    fetchChartData();
   }, [fetchProducts, fetchChartData]);
 
   // --- NUEVO: La función para borrar productos ahora vive aquí ---
@@ -135,6 +146,16 @@ export default function DashboardPage() {
 
           {/* Columna Derecha */}
           <div className="flex flex-col gap-8">
+            {/* --- 2. AÑADIMOS EL COMPONENTE AQUÍ --- */}
+            {/* El gráfico y el asesor usan los mismos datos del reporte */}
+            {reportData && (
+              <>
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                  <SalesChart data={reportData.salesByDay} />
+                </div>
+                <AIAdvisor reportData={reportData} />
+              </>
+            )}
             <CategoryManager />
             <RoleManager />
             <StaffManager />

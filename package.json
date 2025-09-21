@@ -9,9 +9,10 @@
     "lint": "next lint"
   },
   "prisma": {
-  "seed": "tsx prisma/seed.ts"
-},
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.16.2",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.5.0",
