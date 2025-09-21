@@ -11,6 +11,8 @@ import CategoryManager from '@/components/dashboard/CategoryManager';
 import ProductList from '@/components/dashboard/ProductList';
 import SalesChart from '@/components/reports/SalesChart';
 import AIAdvisor from '@/components/dashboard/AIAdvisor';
+import TopProductsChart from '@/components/reports/TopProductsChart';
+
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -109,7 +111,6 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-gray-50 p-4 sm:p-8">
       <div className="mx-auto max-w-7xl">
         
-        {/* --- ESTA ES LA SECCIÓN COMPLETA DE BOTONES --- */}
         <div className="flex justify-end gap-4 mb-8">
           <Link href="/dashboard/reports">
             <button className="rounded-md bg-green-600 px-4 py-2 text-white font-semibold hover:bg-green-700">
@@ -124,8 +125,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-         
-
+        {/* --- LAYOUT CORREGIDO --- */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
           {/* Columna Izquierda */}
           <div className="flex flex-col gap-8">
@@ -135,31 +135,31 @@ export default function DashboardPage() {
               isLoading={isLoadingProducts}
               onDelete={handleDeleteProduct}
             />
-            <div className="mb-8">
-          {reportData && reportData.salesByDay && (
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <SalesChart data={reportData.salesByDay} />
-            </div>
-          )}
-        </div>
+            <StaffManager />
+            <TableManager />
           </div>
 
           {/* Columna Derecha */}
           <div className="flex flex-col gap-8">
-            {/* --- 2. AÑADIMOS EL COMPONENTE AQUÍ --- */}
-            {/* El gráfico y el asesor usan los mismos datos del reporte */}
+            {/* Gráficos movidos aquí */}
             {reportData && (
               <>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <SalesChart data={reportData.salesByDay} />
-                </div>
-                <AIAdvisor reportData={reportData} />
+                {reportData.salesByDay && reportData.salesByDay.length > 0 && (
+                  <div className="bg-white p-6 rounded-lg shadow-md">
+                    <SalesChart data={reportData.salesByDay} />
+                  </div>
+                )}
+                {reportData.topProducts && reportData.topProducts.length > 0 && (
+                  <div className="bg-white p-6 rounded-lg shadow-md">
+                    <TopProductsChart data={reportData.topProducts} />
+                  </div>
+                )}
               </>
             )}
+            
             <CategoryManager />
             <RoleManager />
-            <StaffManager />
-            <TableManager />
+            
           </div>
         </div>
       </div>
