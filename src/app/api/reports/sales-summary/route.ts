@@ -49,9 +49,15 @@ export async function GET(request: Request) {
     const productSales: { [key: string]: { name: string, count: number, revenue: number } } = {};
     const modifierSales: { [key: string]: { name: string, count: number, revenue: number } } = {};
 
-    // --- CORRECCIÓN 3: Le damos el tipo correcto a 'order' para que TypeScript entienda que tiene 'items' ---
+    const salesByDayMap = new Map<string, number>();
+
+   
     for (const order of orders as (Prisma.OrderGetPayload<{include: {items: {include: {product: true}}}}>)[]) {
       totalRevenue += order.total;
+
+      const orderDate = order.createdAt.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+      const currentDailyTotal = salesByDayMap.get(orderDate) || 0;
+      salesByDayMap.set(orderDate, currentDailyTotal + order.total);
 
       for (const item of order.items) {
         if (!productSales[item.productId]) {
@@ -75,6 +81,10 @@ export async function GET(request: Request) {
       }
     }
 
+    const salesByDay = Array.from(salesByDayMap.entries())
+      .map(([date, total]) => ({ date, total }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
     const totalOrders = orders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
@@ -89,6 +99,7 @@ export async function GET(request: Request) {
       },
       topProducts,
       topModifiers,
+      salesByDay,
     };
 
     return NextResponse.json(summary);

@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import SalesChart from '@/components/reports/SalesChart';
 
 // --- Definimos los tipos para los datos del reporte ---
 interface Kpis {
@@ -24,6 +25,7 @@ interface ReportData {
   kpis: Kpis;
   topProducts: TopProduct[];
   topModifiers: TopModifier[];
+  salesByDay: { date: string; total: number }[];
 }
 
 export default function ReportsPage() {
@@ -68,7 +70,7 @@ export default function ReportsPage() {
           </Link>
         </div>
 
-        {/* --- Selector de Fechas --- */}
+        {/* --- Selector de Fechas (sin cambios) --- */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8 flex flex-col sm:flex-row items-center gap-4">
           <div className="flex-1 w-full">
             <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Fecha de Inicio</label>
@@ -85,9 +87,16 @@ export default function ReportsPage() {
 
         {error && <p className="text-center text-red-500 mb-4">{error}</p>}
         
-        {/* --- Resultados del Reporte --- */}
+        {/* --- Resultados del Reporte (con el gráfico añadido) --- */}
         {reportData && (
           <div className="space-y-8">
+            {/* --- GRÁFICO DE VENTAS AÑADIDO AQUÍ --- */}
+            {reportData.salesByDay && reportData.salesByDay.length > 0 && (
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <SalesChart data={reportData.salesByDay} />
+              </div>
+            )}
+            
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-lg shadow-md text-center">
