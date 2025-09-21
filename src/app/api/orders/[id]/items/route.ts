@@ -7,7 +7,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const orderId = params.id;
+    const { id: orderId } = params;
     // 1. Ahora también recibimos las 'options'
     const { productId, quantity, options } = await request.json();
 

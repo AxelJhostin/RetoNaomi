@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const tableId = params.id;
+    const { id: tableId } = params;
     const activeOrder = await prisma.order.findFirst({
       where: {
         tableId: tableId,

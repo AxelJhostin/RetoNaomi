@@ -84,10 +84,10 @@ export async function DELETE(
     const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
     const { payload } = await jwtVerify(token, secret);
     const userId = payload.id as string;
-    
+    const { productId } = params;
     const deleteResult = await prisma.product.deleteMany({
       where: {
-        id: params.productId,
+        id: productId,
         ownerId: userId,
       },
     });

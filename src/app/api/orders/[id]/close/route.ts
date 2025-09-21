@@ -8,7 +8,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const orderId = params.id;
+    const { id: orderId } = params;
 
     // Usamos una transacción para asegurar que ambas actualizaciones ocurran juntas
     const updatedOrderAndTable = await prisma.$transaction(async (tx) => {
