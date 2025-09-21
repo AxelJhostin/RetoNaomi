@@ -154,6 +154,7 @@ export default function DashboardPage() {
                     <TopProductsChart data={reportData.topProducts} />
                   </div>
                 )}
+                <AIAdvisor reportData={reportData} />
               </>
             )}
             
@@ -166,3 +167,4 @@ export default function DashboardPage() {
     </main>
   );
 }
+// Hernandez Menendez Axel Jhostin estuba aqui, no lo olvides
