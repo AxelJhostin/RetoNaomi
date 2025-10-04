@@ -122,6 +122,11 @@ export default function DashboardPage() {
               Ver Reporte de Ventas
             </button>
           </Link>
+          <Link href="/dashboard/settings">
+              <button className="rounded-md bg-gray-700 px-4 py-2 text-white font-semibold hover:bg-gray-800">
+                  Configuración ⚙️
+              </button>
+          </Link>
           <button 
             onClick={handleLogout}
             className="rounded-md bg-red-600 px-4 py-2 text-white font-semibold hover:bg-red-700"
