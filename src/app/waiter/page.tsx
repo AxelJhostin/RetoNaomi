@@ -108,15 +108,30 @@ export default function WaiterPage() {
 
   const handleMarkAsPaid = async (table: Table) => {
     try {
-      const res = await fetch(`/api/tables/${table.id}/active-order`);
-      if (!res.ok) throw new Error('No se encontró un pedido para cobrar');
-      const activeOrder = await res.json();
-      await fetch(`/api/orders/${activeOrder.id}/close`, { method: 'POST' });
-      // Después de cobrar, refrescamos el estado de las mesas
-      fetchTables(); 
+      // 1. Buscamos el pedido activo (esto se puede optimizar, pero funciona por ahora)
+      const resOrder = await fetch(`/api/tables/${table.id}/active-order`);
+      if (!resOrder.ok) throw new Error('No se encontró un pedido para cobrar');
+      const activeOrder = await resOrder.json();
+
+      // 2. Llamamos a nuestra nueva API para cerrar Y CREAR LA FACTURA
+      const resInvoice = await fetch(`/api/orders/${activeOrder.id}/close`, { 
+        method: 'POST' 
+      });
+
+      if (!resInvoice.ok) {
+        throw new Error('No se pudo generar la factura');
+      }
+      
+      // 3. La API nos devuelve la factura creada, la leemos
+      const newInvoice = await resInvoice.json();
+
+      // 4. Redirigimos al mesero a la nueva página de la factura
+      router.push(`/invoice/${newInvoice.id}`);
+
     } catch (error) {
       console.error(error);
-      alert('Error al cobrar el pedido.');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Error al cobrar el pedido: ${errorMessage}`);
     }
   };
 

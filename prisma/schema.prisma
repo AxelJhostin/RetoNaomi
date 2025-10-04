@@ -27,10 +27,29 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  restaurantName    String?
+  restaurantAddress String?
+  taxId             String?  // Aquí iría el RUC
+  taxRate           Float    @default(0.12) // Porcentaje de IVA (12% por defecto)
+  serviceChargeRate Float    @default(0.10) // Porcentaje de Servicio (10% por defecto)
+
   // Relación: Un usuario puede tener muchos productos
   products  Product[]
   staff     Staff[]   @relation("StaffMembers")
   tables    Table[]
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique // Ej: "F-2025-0001"
+  createdAt     DateTime @default(now())
+
+  // Relación uno a uno con la orden que la generó
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id])
+
+  // La "fotografía" inmutable de la venta en formato JSON
+  invoiceData   Json
 }
 
 // MODELO PARA LOS ROLES DEL PERSONAL
@@ -111,6 +130,7 @@ model Order {
   staffId   String
   staff     Staff       @relation(fields: [staffId], references: [id])
   items     OrderItem[]
+  invoice   Invoice?
 }
 
 model OrderItem {
