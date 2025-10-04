@@ -26,12 +26,15 @@ export default function StaffLoginPage() {
       }
 
       // Redirigir según el rol del empleado
-      if (data.user.role === 'Mesero') {
-        router.push('/waiter'); // Futura página del mesero
+      if (data.user.role === 'Gerente') {
+        router.push('/manager'); // <-- Nueva página para el Gerente
+      } else if (data.user.role === 'Mesero') {
+        router.push('/waiter');
       } else if (data.user.role === 'Cocinero') {
-        router.push('/kitchen'); // Futura página de la cocina
+        router.push('/kitchen');
       } else {
-        setError('Rol no reconocido');
+        // Un mensaje de error un poco más descriptivo
+        setError(`Rol "${data.user.role}" no reconocido o sin página asignada.`);
       }
 
     } catch (err) { // Quitamos el ': any'
