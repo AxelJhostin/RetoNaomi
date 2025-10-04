@@ -6,7 +6,6 @@ import { useState, useEffect, useCallback } from 'react';
 import ProductManager from '@/components/dashboard/ProductManager';
 import StaffManager from '@/components/dashboard/StaffManager';
 import TableManager from '@/components/dashboard/TableManager';
-import RoleManager  from '@/components/dashboard/RoleManager';
 import CategoryManager from '@/components/dashboard/CategoryManager';
 import ProductList from '@/components/dashboard/ProductList';
 import SalesChart from '@/components/reports/SalesChart';
@@ -168,9 +167,7 @@ export default function DashboardPage() {
               </>
             )}
             
-            <CategoryManager />
-            <RoleManager />
-            
+            <CategoryManager />            
           </div>
         </div>
       </div>

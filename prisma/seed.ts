@@ -8,6 +8,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Iniciando el script de seeding...');
 
+  console.log('Creando roles base...');
+  await prisma.role.createMany({
+    data: [
+      { name: 'Gerente' },
+      { name: 'Mesero' },
+      { name: 'Cocinero' },
+    ],
+    skipDuplicates: true, // No falla si los roles ya existen
+  });
+  console.log('✅ Roles creados.');
+
   // 1. Creamos el usuario "dueño" que ahora es la "Cuenta de Restaurante"
   const ownerPassword = '123456'; 
   const businessPassword = 'negocio123'; // Contraseña para el login de negocio
