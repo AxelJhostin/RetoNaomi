@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Pusher from 'pusher-js';
+import Link from 'next/link';
 
 // --- Definición de Tipos ---
 interface Table {
@@ -157,9 +158,16 @@ export default function WaiterPage() {
         <h1 className="text-3xl font-bold">
           Mesero: <span className="text-blue-600">{waiterName || 'Cargando...'}</span>
         </h1>
-        <button onClick={handleLogout} className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600">
-          Cerrar Sesión
-        </button>
+        <div className="flex items-center gap-4"> 
+          {/* --- BOTÓN NUEVO AÑADIDO --- */}
+          <Link href="/waiter/my-invoices" className="rounded-md bg-teal-500 px-4 py-2 text-white font-semibold hover:bg-teal-600">
+            Mis Ventas de Hoy
+          </Link>
+          {/* --------------------------- */}
+          <button onClick={handleLogout} className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600">
+            Cerrar Sesión
+          </button>
+        </div>
       </header>
       
       <div className="rounded-lg bg-white p-6 shadow-md">

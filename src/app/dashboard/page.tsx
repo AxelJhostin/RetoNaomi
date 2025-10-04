@@ -112,6 +112,11 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-7xl">
         
         <div className="flex justify-end gap-4 mb-8">
+          <Link href="/dashboard/sales-report">
+            <button className="rounded-md bg-blue-600 px-4 py-2 text-white font-semibold hover:bg-blue-700">
+                Ver Ventas del Día
+            </button>
+          </Link>
           <Link href="/dashboard/reports">
             <button className="rounded-md bg-green-600 px-4 py-2 text-white font-semibold hover:bg-green-700">
               Ver Reporte de Ventas
