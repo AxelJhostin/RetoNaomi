@@ -270,6 +270,14 @@ export default function OrderDetailPage() {
             <div className="grid grid-cols-1 gap-4 mt-4">
               {order.status === 'OPEN' && (<button onClick={() => updateOrderStatus('COOKING')} className="w-full bg-green-500 text-white p-3 rounded-lg font-bold hover:bg-green-600">Enviar a Cocina</button>)}
               {order.status === 'COOKING' && (<div className="w-full bg-gray-200 text-gray-700 p-3 rounded-lg font-bold text-center">En preparación... 🍳</div>)}
+              {order.status === 'COOKING' && (
+                <button 
+                  onClick={() => updateOrderStatus('OPEN')} 
+                  className="w-full bg-blue-500 text-white p-3 rounded-lg font-bold hover:bg-blue-600"
+                >
+                  Añadir más / Modificar
+                </button>
+              )}
               {order.status === 'READY' && (<button onClick={() => updateOrderStatus('DELIVERED')} className="w-full bg-blue-500 text-white p-3 rounded-lg font-bold hover:bg-blue-600">Marcar como Entregado</button>)}
               {order.status === 'DELIVERED' && (<button onClick={handleRequestBill} className="w-full bg-yellow-500 text-white p-3 rounded-lg font-bold hover:bg-yellow-600">Pedir Cuenta</button>)}
             </div>

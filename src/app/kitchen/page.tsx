@@ -29,8 +29,21 @@ export default function KitchenPage() {
     });
 
     const channel = pusher.subscribe('kitchen-channel');
-    channel.bind('new-order', (newOrder: Order) => {
-      setOrders(prevOrders => [...prevOrders, newOrder]);
+    channel.bind('order-update', (updatedOrder: Order) => {
+      setOrders(prevOrders => {
+        // Buscamos si el pedido ya existe en nuestra lista
+        const orderExists = prevOrders.some(order => order.id === updatedOrder.id);
+
+        if (orderExists) {
+          // Si existe, lo REEMPLAZAMOS por su nueva versión
+          return prevOrders.map(order => 
+            order.id === updatedOrder.id ? updatedOrder : order
+          );
+        } else {
+          // Si no existe, lo AÑADIMOS a la lista
+          return [...prevOrders, updatedOrder];
+        }
+      });
     });
     
     return () => {

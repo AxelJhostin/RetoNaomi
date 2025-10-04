@@ -65,7 +65,7 @@ export async function PUT(
           },
         },
       });
-      await pusherServer.trigger('kitchen-channel', 'new-order', detailedOrder);
+      await pusherServer.trigger('kitchen-channel', 'order-update', detailedOrder);
     }
 
     // --- LÓGICA AÑADIDA ---

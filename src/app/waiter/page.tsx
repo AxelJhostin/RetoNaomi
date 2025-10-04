@@ -10,6 +10,8 @@ interface Table {
   name: string;
   status: 'AVAILABLE' | 'OCCUPIED' | 'BILLING';
   isFoodReady?: boolean; // Nuevo estado para la alerta visual
+  activeOrderId: string | null;
+  orderTotal: number;
 }
 
 // --- Componente de la Página de Mesero ---
@@ -156,7 +158,24 @@ export default function WaiterPage() {
                   className={`aspect-square rounded-lg flex flex-col justify-center items-center text-white transition-transform hover:scale-105 ${getTableStyle(table)}`}
                 >
                   <span className="text-xl font-bold">{table.name}</span>
-                  <span className="text-xs uppercase">{table.isFoodReady ? 'COMIDA LISTA' : table.status}</span>
+                  {/* Si el total es mayor a 0, lo mostramos. Si no, mostramos el estado. */}
+                  {table.orderTotal > 0 ? (
+                    <span className="mt-1 text-sm font-semibold bg-black bg-opacity-20 px-2 py-1 rounded">
+                      {new Intl.NumberFormat('es-EC', { 
+                        style: 'currency', 
+                        currency: 'USD' 
+                      }).format(table.orderTotal)}
+                    </span>
+                  ) : (
+                    <span className="text-xs uppercase">{table.status}</span>
+                  )}
+
+                  {/* La alerta de "Comida Lista" se muestra de forma independiente si es necesario */}
+                  {table.isFoodReady && (
+                    <span className="mt-1 text-xs uppercase font-bold text-black">
+                      COMIDA LISTA
+                    </span>
+                  )}
                 </button>
                 {table.status === 'BILLING' && (
                   <button 
