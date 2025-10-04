@@ -62,9 +62,11 @@ export default function ManagerDashboard() {
           </Link>
 
           {/* Aquí podemos añadir más tarjetas en el futuro */}
-          <div className="bg-gray-200 p-6 rounded-lg shadow flex items-center justify-center">
-            <p className="text-gray-500 text-center">Próximamente: Gestión de Personal</p>
-          </div>
+          {/* Tarjeta para la Gestión de Personal */}
+        <Link href="/manager/staff" className="block bg-white p-6 rounded-lg shadow hover:shadow-xl transition-shadow">
+            <h3 className="text-xl font-bold text-green-600">Gestión de Personal</h3>
+            <p className="mt-2 text-gray-600">Añade, edita o elimina miembros del personal y gestiona sus roles.</p>
+        </Link>
           
           <div className="bg-gray-200 p-6 rounded-lg shadow flex items-center justify-center">
             <p className="text-gray-500 text-center">Próximamente: Gestión de Productos</p>

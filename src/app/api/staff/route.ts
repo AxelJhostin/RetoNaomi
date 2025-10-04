@@ -3,49 +3,55 @@ import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Función para OBTENER la lista del personal
+// --- FUNCIÓN AUXILIAR DE AUTENTICACIÓN ---
+async function getOwnerIdFromRequest(request: NextRequest): Promise<string | null> {
+  const ownerToken = request.cookies.get('token')?.value;
+  const staffToken = request.cookies.get('staff_token')?.value;
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+
+  if (ownerToken) {
+    const { payload } = await jwtVerify(ownerToken, secret);
+    return payload.id as string;
+  }
+
+  if (staffToken) {
+    const { payload } = await jwtVerify(staffToken, secret);
+    if (payload.role === 'Gerente') {
+      return payload.ownerId as string;
+    }
+  }
+
+  return null; // No autorizado
+}
+
+// --- GET (Obtener lista) ACTUALIZADO ---
 export async function GET(request: NextRequest) {
   try {
-    // Verificamos el token para saber de qué dueño es el personal
-    const token = request.cookies.get('token')?.value;
-    if (!token) {
+    const ownerId = await getOwnerIdFromRequest(request);
+    if (!ownerId) {
       return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
     }
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-    const { payload } = await jwtVerify(token, secret);
-    const userId = payload.id as string;
 
-    // Buscamos en la base de datos todo el personal que pertenezca al usuario logueado
     const staff = await prisma.staff.findMany({
-      where: {
-        ownerId: userId,
-      },
-      // Incluimos la información del rol para mostrar su nombre en la UI
-      include: {
-        role: true,
-      },
+      where: { ownerId: ownerId },
+      include: { role: true },
     });
 
     return NextResponse.json(staff, { status: 200 });
   } catch (error) {
     console.error('Error al obtener el personal:', error);
-    return NextResponse.json({ message: 'Ocurrió un error en el servidor' }, { status: 500 });
+    return NextResponse.json({ message: 'Ocurrió un error' }, { status: 500 });
   }
 }
 
-// Función para CREAR un nuevo miembro del personal
+// --- POST (Crear nuevo) ACTUALIZADO ---
 export async function POST(request: NextRequest) {
   try {
-    // Verificamos el token del dueño
-    const token = request.cookies.get('token')?.value;
-    if (!token) {
+    const ownerId = await getOwnerIdFromRequest(request);
+    if (!ownerId) {
       return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
     }
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-    const { payload } = await jwtVerify(token, secret);
-    const userId = payload.id as string;
 
-    // Obtenemos los datos del nuevo miembro del cuerpo de la petición
     const body = await request.json();
     const { name, pin, roleId } = body;
 
@@ -53,23 +59,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'El nombre, PIN y rol son requeridos' }, { status: 400 });
     }
     
-    // Por ahora, no encriptaremos el PIN, pero se podría hacer con bcrypt igual que la contraseña
-
     const newStaffMember = await prisma.staff.create({
       data: {
         name,
         pin,
-        ownerId: userId, // Lo asociamos con el dueño
-        roleId: roleId,   // Lo asociamos con el rol
+        ownerId: ownerId, // Usamos el ID del dueño verificado
+        roleId: roleId,
       },
-      include: {
-      role: true, // Le decimos a Prisma que incluya el objeto del rol relacionado
-    },
+      include: { role: true },
     });
 
     return NextResponse.json(newStaffMember, { status: 201 });
   } catch (error) {
     console.error('Error al crear miembro del personal:', error);
-    return NextResponse.json({ message: 'Ocurrió un error en el servidor' }, { status: 500 });
+    return NextResponse.json({ message: 'Ocurrió un error' }, { status: 500 });
   }
 }
