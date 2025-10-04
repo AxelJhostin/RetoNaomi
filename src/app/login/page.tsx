@@ -1,109 +1,85 @@
 // src/app/login/page.tsx
+// --- ESTE ES EL CÓDIGO CORRECTO PARA EL LOGIN DE NEGOCIO ---
 'use client';
 
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  // Nuevos estados para una mejor experiencia de usuario
-  const [loading, setLoading] = useState(false);
+export default function BusinessLoginPage() {
+  const [businessUsername, setBusinessUsername] = useState('');
+  const [businessPassword, setBusinessPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true); // Empezamos la carga
-    setError(null);   // Limpiamos errores anteriores
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/business-login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessUsername, businessPassword }),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Si la respuesta es exitosa (status 200-299)
-        console.log('Login exitoso:', data);
-        router.push('/dashboard');
-        // Aquí, en el futuro, redirigiremos al usuario al dashboard
-      } else {
-        // Si hay un error (status 4xx, 5xx)
-        console.error('Error en el login:', data);
-        setError(data.message || 'Ocurrió un error.');
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Error de autenticación');
       }
+
+      // Si el login es exitoso, redirigimos a la página "Portal"
+      router.push(`/portal/${data.restaurantId}`);
+
     } catch (err) {
-      console.error('Error de conexión:', err);
-      setError('No se pudo conectar al servidor. Inténtalo de nuevo.');
+      const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error inesperado';
+      setError(errorMessage);
     } finally {
-      setLoading(false); // Terminamos la carga
+      setIsLoading(false);
     }
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center text-3xl font-bold text-gray-800">
-          Iniciar Sesión
-        </h1>
-        <p className="mb-8 text-center text-gray-600">
-          Bienvenido a Tap&Order
-        </p>
-
-        <form onSubmit={handleSubmit}>
-          {/* Mostramos el mensaje de error si existe */}
-          {error && (
-            <div className="mb-4 rounded-md bg-red-100 p-3 text-center text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <div className="mb-4">
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700">
-              Correo Electrónico
+    <main className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-md">
+        <h1 className="mb-6 text-center text-2xl font-bold">Acceso de Negocio</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="businessUsername" className="block text-sm font-medium text-gray-700">
+              Usuario del Negocio
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="tu@email.com"
+              type="text"
+              id="businessUsername"
+              value={businessUsername}
+              onChange={(e) => setBusinessUsername(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading} // Deshabilitamos el input mientras carga
             />
           </div>
-
-          <div className="mb-6">
-            <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-700">
-              Contraseña
+          <div>
+            <label htmlFor="businessPassword" className="block text-sm font-medium text-gray-700">
+              Contraseña del Negocio
             </label>
             <input
               type="password"
-              id="password"
-              name="password"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
+              id="businessPassword"
+              value={businessPassword}
+              onChange={(e) => setBusinessPassword(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading} // Deshabilitamos el input mientras carga
             />
           </div>
+          
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-            disabled={loading} // Deshabilitamos el botón mientras carga
+            disabled={isLoading}
+            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Ingresando...' : 'Ingresar'}
+            {isLoading ? 'Verificando...' : 'Entrar'}
           </button>
         </form>
       </div>

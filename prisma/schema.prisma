@@ -18,22 +18,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// MODELO PARA LOS USUARIOS (DUEÑOS DE RESTAURANTES)
+// Ahora representa la "Cuenta del Restaurante" o "Tenant"
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // --- Login del Dueño (para el Dashboard) ---
+  email     String   @unique
+  password  String
+  name      String?  // Nombre del dueño
+
+  // --- Login del Negocio (Puerta 1) ---
+  businessUsername String @unique // El usuario del restaurante
+  businessPassword String // La contraseña del restaurante
+
+  // --- Datos de Configuración del Restaurante ---
   restaurantName    String?
   restaurantAddress String?
-  taxId             String?  // Aquí iría el RUC
-  taxRate           Float    @default(0.12) // Porcentaje de IVA (12% por defecto)
-  serviceChargeRate Float    @default(0.10) // Porcentaje de Servicio (10% por defecto)
+  taxId             String?
+  taxRate           Float    @default(0.12)
+  serviceChargeRate Float    @default(0.10)
 
-  // Relación: Un usuario puede tener muchos productos
+  // --- Relaciones: Un Restaurante (User) tiene muchos... ---
   products  Product[]
   staff     Staff[]   @relation("StaffMembers")
   tables    Table[]
@@ -82,7 +89,7 @@ model Product {
 model Staff {
   id        String   @id @default(cuid())
   name      String
-  pin       String  @unique   // Un PIN de 4 o 6 dígitos para un login rápido
+  pin       String  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -94,6 +101,7 @@ model Staff {
   roleId    String
   role      Role     @relation(fields: [roleId], references: [id])
   orders    Order[] 
+  @@unique([ownerId, pin])
 }
 
 enum TableStatus {
