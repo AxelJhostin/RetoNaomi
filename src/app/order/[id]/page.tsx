@@ -66,7 +66,8 @@ export default function OrderDetailPage() {
   
   const handleAddToCartWithModifiers = async (
     product: ProductWithRelations, 
-    selectedOptions: ModifierOption[]
+    selectedOptions: ModifierOption[],
+    notes: string // <-- Acepta el nuevo parámetro 'notes'
   ) => {
     try {
       const res = await fetch(`/api/orders/${orderId}/items`, {
@@ -76,16 +77,17 @@ export default function OrderDetailPage() {
           productId: product.id,
           quantity: 1,
           options: selectedOptions,
+          notes: notes, // <-- Y lo envía a la API
         }),
       });
 
       if (!res.ok) {
-        throw new Error('Error al añadir el item con modificadores');
+        throw new Error('Error al añadir el item');
       }
       fetchOrderDetails();
       handleCloseModal();
     } catch (error) {
-      console.error("Error adding item with modifiers:", error);
+      console.error("Error adding item:", error);
       alert('No se pudo añadir el producto al pedido.');
     }
   };
@@ -110,11 +112,7 @@ export default function OrderDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      if (status === 'COOKING') {
-        router.push('/waiter');
-      } else {
-        fetchOrderDetails();
-      }
+      fetchOrderDetails(); 
     } catch (error) {
       console.error(`Error al cambiar estado a ${status}:`, error);
       alert(`No se pudo actualizar el pedido.`);
@@ -237,15 +235,22 @@ export default function OrderDetailPage() {
                   <li key={item.id} className="flex justify-between items-start py-3 border-b last:border-none">
                     <div className="flex items-start gap-4">
                       <button onClick={() => deleteOrderItem(item.id)} className="text-red-500 font-bold text-lg hover:text-red-700 mt-1 disabled:opacity-50" disabled={order.status !== 'OPEN'}>&times;</button>
-                      <div>
-                        <p className="font-semibold">{item.product.name}</p>
-                        {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-                          <ul className="text-xs text-gray-500 pl-3">
-                            {item.selectedModifiers.map((mod) => (
-                              <li key={mod.id}>+ {mod.name}</li>
-                            ))}
-                          </ul>
-                        )}
+                        <div>
+                          <p className="font-semibold">{item.product.name}</p>
+                          {/* Muestra los modificadores con costo */}
+                          {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                              <ul className="text-xs text-gray-500 pl-3">
+                                  {item.selectedModifiers.map((mod) => (
+                                      <li key={mod.id}>+ {mod.name}</li>
+                                  ))}
+                              </ul>
+                          )}
+                          {/* --- AÑADIDO: Muestra la nota si existe --- */}
+                          {item.notes && (
+                              <p className="text-xs text-orange-600 italic pl-3 mt-1">
+                                  Nota: {item.notes}
+                              </p>
+                          )}
                       </div>
                     </div>
                     <div className="flex flex-col items-end">

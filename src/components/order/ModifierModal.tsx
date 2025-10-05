@@ -1,5 +1,6 @@
 // src/components/order/ModifierModal.tsx
 'use client';
+
 import { useState, useEffect } from 'react';
 import { ProductWithRelations, ModifierOption } from '../../types';
 
@@ -7,15 +8,17 @@ interface ModifierModalProps {
   product: ProductWithRelations;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (product: ProductWithRelations, selectedOptions: ModifierOption[]) => void;
+  onAddToCart: (product: ProductWithRelations, selectedOptions: ModifierOption[], notes: string) => void;
 }
 
 export default function ModifierModal({ product, isOpen, onClose, onAddToCart }: ModifierModalProps) {
   const [selectedOptions, setSelectedOptions] = useState<ModifierOption[]>([]);
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setSelectedOptions([]);
+      setNotes('');
     }
   }, [isOpen, product.id]);
 
@@ -24,7 +27,7 @@ export default function ModifierModal({ product, isOpen, onClose, onAddToCart }:
   }
 
   const handleOptionChange = (option: ModifierOption, isChecked: boolean) => {
-    setSelectedOptions(prev => 
+    setSelectedOptions(prev =>
       isChecked ? [...prev, option] : prev.filter(item => item.id !== option.id)
     );
   };
@@ -35,15 +38,17 @@ export default function ModifierModal({ product, isOpen, onClose, onAddToCart }:
   };
 
   const handleConfirm = () => {
-    onAddToCart(product, selectedOptions);
+    onAddToCart(product, selectedOptions, notes);
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4">{product.name}</h2>
-        <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
-          {product.modifierGroups.map(group => (
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+          
+          {/* --- CÓDIGO DE MODIFICADORES REINSERTADO --- */}
+          {product.modifierGroups.length > 0 && product.modifierGroups.map(group => (
             <div key={group.id}>
               <h3 className="font-semibold border-b pb-1 mb-2">{group.name}</h3>
               <div className="space-y-2">
@@ -64,7 +69,23 @@ export default function ModifierModal({ product, isOpen, onClose, onAddToCart }:
               </div>
             </div>
           ))}
+          {/* --- FIN DEL CÓDIGO REINSERTADO --- */}
+
+          <div className="pt-2">
+            <label htmlFor="order-notes" className="block text-sm font-semibold text-gray-700">
+              Instrucciones Especiales (Notas)
+            </label>
+            <textarea
+              id="order-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ej: sin lechuga, término medio, extra picante..."
+              className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              rows={2}
+            />
+          </div>
         </div>
+
         <div className="mt-6 pt-4 border-t flex justify-between items-center">
           <div>
             <span className="text-lg font-semibold">Total:</span>

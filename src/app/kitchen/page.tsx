@@ -11,6 +11,7 @@ interface OrderItem {
   quantity: number;
   product: { name: string };
   selectedModifiers?: { id: string; name: string; price: number }[];
+  notes?: string;
 }
 interface Order {
   id: string;
@@ -99,14 +100,21 @@ export default function KitchenPage() {
               <ul className="flex-grow space-y-3 border-t border-b border-gray-600 py-4">
                 {order.items.map(item => (
                   <li key={item.id}>
-                    <span className="font-semibold text-lg">{item.quantity}x {item.product.name}</span>
-                    {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-                      <ul className="text-sm text-gray-300 pl-6 list-disc list-inside">
-                        {item.selectedModifiers.map(mod => (
-                          <li key={mod.id}>{mod.name}</li>
-                        ))}
-                      </ul>
-                    )}
+                      <span className="font-semibold text-lg">{item.quantity}x {item.product.name}</span>
+                      {/* Muestra los modificadores con costo */}
+                      {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                          <ul className="text-sm text-gray-300 pl-6 list-disc list-inside">
+                              {item.selectedModifiers.map(mod => (
+                                  <li key={mod.id}>{mod.name}</li>
+                              ))}
+                          </ul>
+                      )}
+                      {/* --- AÑADIDO: Muestra la nota si existe --- */}
+                      {item.notes && (
+                          <p className="text-sm text-yellow-300 italic pl-6">
+                              ↳ Nota: {item.notes}
+                          </p>
+                      )}
                   </li>
                 ))}
               </ul>

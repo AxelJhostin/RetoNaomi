@@ -9,7 +9,7 @@ export async function GET(
 ) {
   // Extraer el ID de la mesa de los parámetros de la ruta
   try {
-    const { id: tableId } = params;
+    const tableId = params.id;
     const activeOrder = await prisma.order.findFirst({
       where: {
         tableId: tableId,

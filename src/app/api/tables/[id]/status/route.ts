@@ -8,7 +8,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const tableId = params.id;
+     const tableId = params.id;
     const { status } = await request.json();
 
     const updatedTable = await prisma.table.update({

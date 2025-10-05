@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id: orderId } = params;
+    const orderId = params.id;
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -37,7 +37,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id: orderId } = params;
+    const orderId = params.id;
     const { status } = await request.json();
 
     if (!status) {

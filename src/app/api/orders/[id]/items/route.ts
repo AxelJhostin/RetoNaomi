@@ -7,34 +7,29 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id: orderId } = params;
-    // 1. Ahora también recibimos las 'options'
-    const { productId, quantity, options } = await request.json();
+    const orderId = params.id;
+    
+    const { productId, quantity, options, notes } = await request.json();
 
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) {
       return NextResponse.json({ message: 'Producto no encontrado' }, { status: 404 });
     }
 
-    // 2. Calculamos el precio de los modificadores seleccionados
     const optionsPrice = options?.reduce((total: number, option:{ price: number }) => total + option.price, 0) || 0;
-    
-    // 3. Calculamos el precio total de ESTE item (producto + modificadores)
     const newItemPrice = (product.price + optionsPrice) * quantity;
 
-    // 4. Creamos el OrderItem guardando los modificadores
     const newOrderItem = await prisma.orderItem.create({
       data: {
         orderId: orderId,
         productId: productId,
         quantity: quantity,
-        price: product.price, // Guardamos el precio BASE del producto
-        selectedModifiers: options || [], // Guardamos el array de opciones
+        price: product.price,
+        selectedModifiers: options || [],
+        notes: notes,
       },
     });
 
-    // 5. Actualizamos el total del pedido de forma segura
-    // Sumamos el precio del nuevo item al total que ya existía
     await prisma.order.update({
         where: { id: orderId },
         data: { 

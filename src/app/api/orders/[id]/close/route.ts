@@ -16,7 +16,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id: orderId } = params;
+    const orderId = params.id;
 
     const newInvoice = await prisma.$transaction(async (tx) => {
       // 1. Obtenemos TODOS los datos necesarios para la factura en una sola consulta

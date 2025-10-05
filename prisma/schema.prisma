@@ -146,6 +146,7 @@ model OrderItem {
   quantity  Int
   price     Float    // Precio al momento de la venta
   selectedModifiers  Json?
+  notes    String?
   createdAt DateTime @default(now())
 
   // Relaciones
