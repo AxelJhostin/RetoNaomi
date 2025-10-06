@@ -52,7 +52,7 @@ model Invoice {
   createdAt     DateTime @default(now())
 
   // Relación uno a uno con la orden que la generó
-  orderId       String   @unique
+  orderId       String   
   order         Order    @relation(fields: [orderId], references: [id])
 
   // La "fotografía" inmutable de la venta en formato JSON
@@ -138,7 +138,7 @@ model Order {
   staffId   String
   staff     Staff       @relation(fields: [staffId], references: [id])
   items     OrderItem[]
-  invoice   Invoice?
+  invoice   Invoice[]
 }
 
 model OrderItem {

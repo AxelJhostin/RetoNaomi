@@ -256,6 +256,45 @@ export default function OrderDetailPage() {
     ]);
   };
 
+  const handleProcessSplitPayment = async (split: Split) => {
+    if (!order || split.items.length === 0) return;
+
+    // Podríamos añadir un estado de 'cargando' aquí para deshabilitar el botón
+    
+    try {
+        // Mapeamos los items de la división al formato que espera la API
+        const itemsPayload = split.items.map(item => ({
+            quantity: item.quantity,
+            productName: item.product.name,
+            unitPrice: item.price,
+            modifiers: ((item.selectedModifiers as ModifierOption[]) || []).map(mod => mod.name),
+            itemTotal: calculateItemTotal(item),
+            notes: item.notes,
+        }));
+
+        // Llamamos a nuestra nueva API para crear la factura parcial
+        const res = await fetch('/api/invoices/from-split', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId: order.id,
+                items: itemsPayload,
+            }),
+        });
+
+        if (!res.ok) throw new Error('No se pudo procesar el pago');
+
+        const newInvoice = await res.json();
+        
+        // Llevamos al mesero a la página del recibo recién generado
+        router.push(`/invoice/${newInvoice.id}`);
+
+    } catch (error) {
+        console.error(error);
+        alert('Error al procesar el pago.');
+    }
+  };
+
   if (isLoading) return <p className="p-8">Cargando pedido...</p>;
   if (!order) return <p className="p-8">Pedido no encontrado.</p>;
 
@@ -447,7 +486,17 @@ return (
                         </ul>
                         <div className="border-t mt-4 pt-2 text-right">
                           <span className="font-bold">Total: ${calculateSplitTotal(split.items).toFixed(2)}</span>
-                          <button className='w-full bg-blue-600 text-white p-2 rounded-md text-sm font-bold mt-4 hover:bg-blue-700'>Cobrar Pago {split.id}</button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation(); // Evita que se active el onClick del div padre
+                              handleProcessSplitPayment(split);
+                            }}
+                            className='w-full bg-blue-600 text-white p-2 rounded-md text-sm font-bold mt-4 hover:bg-blue-700 disabled:bg-gray-400'
+                            // Deshabilitamos el botón si la sub-cuenta está vacía
+                            disabled={split.items.length === 0}
+                          >
+                            Cobrar Pago {split.id}
+                          </button>
                         </div>
                       </div>
                     ))}
