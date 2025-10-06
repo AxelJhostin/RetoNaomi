@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
     const prompt = `
       Eres un asesor experto en gestión de restaurantes. Analiza los siguientes datos de ventas de un restaurante llamado "Tap&Order" y proporciona 3 recomendaciones cortas, claras y accionables para que el dueño pueda aumentar sus ingresos o mejorar la operación. Sé directo y amigable.
