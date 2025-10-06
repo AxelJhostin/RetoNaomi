@@ -220,6 +220,42 @@ export default function OrderDetailPage() {
     return splitItems.reduce((total, item) => total + calculateItemTotal(item), 0);
   };
 
+  const handleSplitItem = (itemToSplit: OrderItemWithRelations) => {
+    // Pedimos al usuario el número de divisiones
+    const numSplits = parseInt(prompt('¿Dividir este ítem entre cuántas personas?', '2') || '1', 10);
+    
+    // Validamos la entrada
+    if (isNaN(numSplits) || numSplits <= 1 || numSplits > itemToSplit.quantity) {
+      alert('Número inválido. Debe ser un número mayor a 1 y no mayor a la cantidad del producto.');
+      return;
+    }
+
+    // Calculamos el precio y cantidad para cada parte
+    const originalTotal = calculateItemTotal(itemToSplit);
+    const splitPrice = originalTotal / numSplits;
+    const splitQuantity = itemToSplit.quantity / numSplits;
+
+    // Creamos los nuevos "sub-ítems"
+    const newSplitItems: OrderItemWithRelations[] = Array.from({ length: numSplits }).map((_, index) => ({
+      ...itemToSplit,
+      // Creamos un ID único para cada sub-item para que React no se confunda
+      id: `${itemToSplit.id}-split-${index}`,
+      price: itemToSplit.price / numSplits, // Dividimos el precio base
+      quantity: splitQuantity,
+      product: {
+        ...itemToSplit.product, // <-- 1. Copiamos todas las propiedades del producto original
+        // 2. Y LUEGO modificamos solo el nombre
+        name: `${itemToSplit.product.name} (1/${numSplits})`,
+      }
+    }));
+
+    // Actualizamos el estado: removemos el ítem original y añadimos los nuevos sub-ítems
+    setUnassignedItems(prev => [
+      ...prev.filter(item => item.id !== itemToSplit.id),
+      ...newSplitItems,
+    ]);
+  };
+
   if (isLoading) return <p className="p-8">Cargando pedido...</p>;
   if (!order) return <p className="p-8">Pedido no encontrado.</p>;
 
@@ -236,16 +272,9 @@ export default function OrderDetailPage() {
     return acc;
   }, {} as Record<string, ProductWithRelations[]>);
 
-  return (
+return (
     <>
-      {/* Contenedor principal que se asegura de que el modal se muestre por encima de todo */}
-      
-      {/* INICIO DEL LAYOUT PRINCIPAL DE DOS COLUMNAS */}
       <main className="grid grid-cols-1 md:grid-cols-2 h-screen">
-        
-        {/* ====================================================================== */}
-        {/* SECCIÓN IZQUIERDA (MENÚ DE PRODUCTOS) - SIN CAMBIOS */}
-        {/* ====================================================================== */}
         <section className="bg-gray-50 p-6 overflow-y-auto">
           <h1 className="text-2xl font-bold mb-4">Añadir a Pedido</h1>
           <div className="mb-4 sticky top-0 bg-gray-50 py-2">
@@ -273,7 +302,6 @@ export default function OrderDetailPage() {
                         key={product.id}
                         onClick={() => handleProductClick(product)}
                         className="p-4 border rounded-lg bg-white shadow hover:bg-blue-50 disabled:opacity-50 h-24 flex flex-col justify-center text-center"
-                        // Los botones de añadir se deshabilitan si el pedido no está 'abierto'
                         disabled={order.status !== 'OPEN'}
                       >
                         <p className="font-semibold text-sm">{product.name}</p>
@@ -287,23 +315,16 @@ export default function OrderDetailPage() {
           </div>
         </section>
 
-        {/* ====================================================================== */}
-        {/* SECCIÓN DERECHA (EL PEDIDO) - CON LA NUEVA LÓGICA DE DIVISIÓN */}
-        {/* ====================================================================== */}
         <section className="p-6 bg-white flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold">Pedido: <span className="text-blue-600">{order.table.name}</span></h1>
-            {/* El botón de volver cambia su texto y función dependiendo del modo */}
             <button onClick={isSplitting ? handleCancelSplitting : handleGoBack} className="text-sm text-blue-600 hover:underline">
               {isSplitting ? 'Cancelar División' : 'Volver a Mesas'}
             </button>
           </div>
           
-          {/* --- LÓGICA CONDICIONAL PRINCIPAL --- */}
-          {/* Si NO estamos en modo división, muestra la vista normal */}
           {!isSplitting ? (
             <>
-              {/* --- VISTA NORMAL DEL PEDIDO --- */}
               <div className="flex-grow border-t pt-4 overflow-y-auto">
                 {order.items.length === 0 ? (<p>Este pedido está vacío.</p>) : (
                   <ul>
@@ -341,7 +362,6 @@ export default function OrderDetailPage() {
                   </ul>
                 )}
               </div>
-              {/* --- PIE DE LA VISTA NORMAL (TOTAL Y BOTONES DE ACCIÓN) --- */}
               <div className="border-t pt-4 mt-4">
                 <div className="flex justify-between items-center text-2xl font-bold">
                   <span>Total</span>
@@ -353,7 +373,6 @@ export default function OrderDetailPage() {
                   {order.status === 'COOKING' && (<button onClick={() => updateOrderStatus('OPEN')} className="w-full bg-blue-500 text-white p-3 rounded-lg font-bold hover:bg-blue-600">Añadir más / Modificar</button>)}
                   {order.status === 'READY' && (<button onClick={() => updateOrderStatus('DELIVERED')} className="w-full bg-blue-500 text-white p-3 rounded-lg font-bold hover:bg-blue-600">Marcar como Entregado</button>)}
                   
-                  {/* Los botones de pago aparecen cuando el pedido está listo o entregado */}
                   {(order.status === 'READY' || order.status === 'DELIVERED') && (
                     <div className='flex gap-4'>
                       <button onClick={handleRequestBill} className="w-full bg-yellow-500 text-white p-3 rounded-lg font-bold hover:bg-yellow-600">Pedir Cuenta</button>
@@ -365,29 +384,42 @@ export default function OrderDetailPage() {
             </>
           ) : (
             <>
-              {/* --- NUEVA VISTA DE MODO DIVISIÓN --- */}
               <div className="flex-grow border-t pt-4 flex flex-col">
-                {/* --- Columna de Ítems sin Asignar --- */}
                 <div className="mb-6">
                   <h3 className="font-bold text-lg mb-2 text-gray-700">Productos sin Asignar</h3>
                   <div className="space-y-2 p-2 border rounded-lg bg-gray-50 min-h-[100px]">
                     {unassignedItems.map(item => (
                       <div 
                         key={item.id}
-                        onClick={() => setItemToMove(item)}
-                        className={`text-sm flex justify-between p-2 rounded-md cursor-pointer transition-all ${
-                          itemToMove?.id === item.id ? 'bg-blue-200 ring-2 ring-blue-500' : 'hover:bg-gray-200'
+                        className={`flex items-center justify-between p-2 rounded-md transition-all ${
+                          itemToMove?.id === item.id ? 'bg-blue-200 ring-2 ring-blue-500' : ''
                         }`}
                       >
-                        <span>{item.quantity}x {item.product.name}</span>
-                        <span className='font-mono'>${calculateItemTotal(item).toFixed(2)}</span>
+                        <div 
+                          onClick={() => setItemToMove(item)}
+                          className="flex-grow cursor-pointer"
+                        >
+                          <span>{item.quantity}x {item.product.name}</span>
+                          <span className='font-mono float-right'>${calculateItemTotal(item).toFixed(2)}</span>
+                        </div>
+                        {!item.id.includes('-split-') && item.quantity === 1 && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSplitItem(item);
+                            }}
+                            className="ml-2 px-2 py-1 text-xs bg-gray-300 rounded hover:bg-gray-400"
+                            title="Dividir este ítem"
+                          >
+                            ✂️
+                          </button>
+                        )}
                       </div>
                     ))}
                     {unassignedItems.length === 0 && <p className="text-xs text-gray-400 text-center p-4">Todos los productos han sido asignados.</p>}
                   </div>
                 </div>
 
-                {/* --- Contenedor para las columnas de pago --- */}
                 <div className="flex-grow overflow-y-auto">
                   <div className="flex justify-end mb-4">
                     <button onClick={handleAddSplit} className="bg-green-500 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-green-600">
@@ -427,7 +459,6 @@ export default function OrderDetailPage() {
         </section>
       </main>
       
-      {/* El modal se renderiza al final para que aparezca por encima de todo */}
       {selectedProduct && (
         <ModifierModal
           isOpen={isModalOpen}
