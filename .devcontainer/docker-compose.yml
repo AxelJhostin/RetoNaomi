@@ -14,9 +14,7 @@ services:
     command: sleep infinity
     depends_on:
       - db
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/tapandorder_db
-
+      
   # Servicio para la base de datos PostgreSQL
   db:
     image: postgres:16-alpine
