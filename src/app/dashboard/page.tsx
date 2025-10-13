@@ -166,7 +166,6 @@ export default function DashboardPage() {
                 <AIAdvisor reportData={reportData} />
               </>
             )}
-            
             <CategoryManager />            
           </div>
         </div>
