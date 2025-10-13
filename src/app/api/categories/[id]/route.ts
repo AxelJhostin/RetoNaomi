@@ -2,9 +2,9 @@
 import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
-// La función GET se mantiene igual, pero la revisamos por si acaso
+// --- FUNCIÓN GET CORREGIDA ---
 export async function GET(
-    request: NextRequest, 
+    request: NextRequest, // Añadimos el primer argumento
     { params }: { params: { id: string } }
 ) {
     try {
@@ -21,9 +21,8 @@ export async function GET(
 }
 
 // --- FUNCIÓN PUT CORREGIDA ---
-// Añadimos 'request: NextRequest' como el primer argumento
 export async function PUT(
-    request: NextRequest, 
+    request: NextRequest, // Añadimos el primer argumento
     { params }: { params: { id: string } }
 ) {
     try {
@@ -41,9 +40,9 @@ export async function PUT(
     }
 }
 
-// La función DELETE se mantiene igual, pero la revisamos
+// --- FUNCIÓN DELETE CORREGIDA ---
 export async function DELETE(
-    request: NextRequest, 
+    request: NextRequest, // Añadimos el primer argumento
     { params }: { params: { id: string } }
 ) {
     try {
@@ -55,3 +54,4 @@ export async function DELETE(
         return NextResponse.json({ message: 'Error al eliminar la categoría' }, { status: 500 });
     }
 }
+//cambios 
