@@ -65,13 +65,10 @@ export default function OrderDetailPage() {
   };
 
   const handleProductClick = (product: ProductWithRelations) => {
-    if (product.modifierGroups && product.modifierGroups.length > 0) {
-      setSelectedProduct(product);
-      setIsModalOpen(true);
-    } else {
-      handleAddProductToOrder(product.id);
-    }
-  };
+  // Siempre abrimos el modal, sin importar si tiene modificadores o no.
+  setSelectedProduct(product);
+  setIsModalOpen(true);
+};
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
