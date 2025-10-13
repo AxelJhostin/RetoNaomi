@@ -19,6 +19,7 @@
     "jose": "^6.0.13",
     "jsonwebtoken": "^9.0.2",
     "next": "15.4.5",
+    "openai": "^6.3.0",
     "pusher": "^5.2.0",
     "pusher-js": "^8.4.0",
     "react": "19.1.0",
